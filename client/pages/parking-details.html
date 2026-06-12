@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parking Details — ParkIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+.detail-hero{height:320px;background:var(--bg2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-top:64px}
+.detail-hero-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(245,166,35,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,166,35,.03) 1px,transparent 1px);background-size:40px 40px}
+.detail-hero-img{position:absolute;inset:0;background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);display:flex;align-items:center;justify-content:center;font-size:5rem}
+.detail-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,10,10,.9) 0%,transparent 60%)}
+.detail-hero-content{position:absolute;bottom:0;left:0;right:0;padding:2rem 5vw}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.85rem;margin-bottom:1rem;cursor:pointer;transition:color .2s;background:none;border:none;padding:0;font-family:'DM Sans'}
+.back-btn:hover{color:var(--text)}
+.back-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.detail-body{max-width:1100px;margin:0 auto;padding:2.5rem 5vw;display:grid;grid-template-columns:1fr 340px;gap:2.5rem;align-items:start}
+.detail-main{}
+.detail-sticky{position:sticky;top:80px}
+.book-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem}
+.price-big{font-family:'Syne',sans-serif;font-weight:800;font-size:2.5rem;color:var(--amber);line-height:1}
+.price-unit{font-family:'DM Sans';font-size:.9rem;font-weight:400;color:var(--muted)}
+.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:1rem 0}
+.slot-cell{height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.slot-available{background:rgba(76,175,80,.12);color:#4CAF50;border-color:rgba(76,175,80,.3)}
+.slot-available:hover{background:rgba(76,175,80,.25)}
+.slot-occupied{background:rgba(255,255,255,.04);color:var(--border);cursor:not-allowed}
+.slot-selected{background:var(--amber);color:#0a0a0a;border-color:var(--amber)}
+.slot-ev{background:rgba(59,130,246,.12);color:#3B82F6;border-color:rgba(59,130,246,.3)}
+.slot-handicap{background:rgba(168,85,247,.12);color:#A855F7;border-color:rgba(168,85,247,.3)}
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.75rem 0}
+.feature-item{display:flex;align-items:center;gap:8px;font-size:.875rem;padding:.6rem;background:var(--bg3);border-radius:var(--radius-sm)}
+.feature-item svg{width:18px;height:18px;stroke:var(--amber);fill:none;stroke-width:1.8;flex-shrink:0}
+.feature-item.inactive svg{stroke:var(--border)}
+.feature-item.inactive{color:var(--muted);opacity:.6}
+.review-item{padding:1.25rem 0;border-bottom:1px solid var(--border)}
+.review-item:last-child{border-bottom:none}
+.review-stars{display:flex;gap:2px;margin-bottom:.5rem}
+.review-star{width:14px;height:14px}
+.review-text{font-size:.875rem;color:var(--muted);margin-bottom:.75rem;line-height:1.6}
+.review-author{display:flex;align-items:center;gap:8px;font-size:.8rem}
+.hours-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.hours-row{display:flex;justify-content:space-between;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid var(--border)}
+.hours-row:last-child{border-bottom:none}
+.hours-day{color:var(--muted)}
+.hours-time{color:var(--text)}
+@media(max-width:900px){.detail-body{grid-template-columns:1fr}.detail-sticky{position:static}}
+</style>
+</head>
+<body>
+<div id="page-loader" class="page-loader"><div class="spinner"></div></div>
+<div id="toast-container"></div>
+
+<nav class="nav">
+  <a href="index.html" class="nav-logo"><div class="logo-dot"></div>Park<span>IQ</span></a>
+  <div class="nav-links">
+    <a href="map.html">Find Parking</a>
+    <a href="dashboard.html" data-auth="user">Dashboard</a>
+  </div>
+  <div class="nav-right">
+    <a href="login.html" class="btn btn-outline btn-sm" data-auth="guest">Sign in</a>
+    <a href="dashboard.html" class="btn btn-primary btn-sm" data-auth="user">My Account</a>
+  </div>
+</nav>
+
+<div class="detail-hero">
+  <div class="detail-hero-bg"></div>
+  <div class="detail-hero-img">🅿️</div>
+  <div class="detail-hero-overlay"></div>
+  <div class="detail-hero-content">
+    <button class="back-btn" onclick="goBack()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to map
+    </button>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 id="detail-name" style="font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.3rem" id="detail-name">Parking Location</h1>
+        <p id="detail-address" style="color:var(--muted);font-size:.9rem;display:flex;align-items:center;gap:5px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Rajpur Road, Near Clock Tower, Dehradun, Uttarakhand 248001
+        </p>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-outline btn-sm" onclick="toggleFavorite(this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Save
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="shareLocation()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-body">
+  <div class="detail-main">
+    <!-- Overview -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem">
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)" id="stat-avail">45</div>
+        <div style="font-size:.75rem;color:var(--muted)">Spots free</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">150</div>
+        <div style="font-size:.75rem;color:var(--muted)">Total slots</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)">★ 4.5</div>
+        <div style="font-size:.75rem;color:var(--muted)">128 reviews</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">0.3km</div>
+        <div style="font-size:.75rem;color:var(--muted)">From you</div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3 style="margin-bottom:.75rem">About this parking</h3>
+      <p style="color:var(--muted);font-size:.9rem">Premium covered parking in the heart of downtown with 24/7 security and EV charging stations. Perfect for both short visits and all-day parking. The facility features state-of-the-art CCTV, on-site staff, and climate-controlled covered bays.</p>
+    </div>
+
+    <!-- Features -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3 style="margin-bottom:.75rem">Facilities & Features</h3>
+      <div class="feature-grid">
+        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>EV Charging</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Covered Parking</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>24/7 Security</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>CCTV</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>24 Hours Open</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Handicap Spots</div>
+        <div class="feature-item inactive"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Car Wash</div>
+        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7"/><path d="M9 22V12h6v10"/></svg>Elevator Access</div>
+      </div>
+    </div>
+
+    <!-- Slot map -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="flex-between" style="margin-bottom:.75rem">
+        <h3>Slot Map — Ground Floor</h3>
+        <div style="display:flex;gap:.75rem;font-size:.72rem;color:var(--muted)">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(76,175,80,.2);display:inline-block"></span>Free</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.06);display:inline-block"></span>Taken</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,.2);display:inline-block"></span>EV</span>
+        </div>
+      </div>
+      <div class="slot-grid" id="slot-grid"></div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Click an available slot to pre-select it for your booking.</p>
+    </div>
+
+    <!-- Hours -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <h3 style="margin-bottom:.75rem">Operating Hours</h3>
+      <div class="hours-grid">
+        <div><div class="hours-row"><span class="hours-day">Monday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Tuesday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Wednesday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Thursday</span><span class="hours-time">Open 24hr</span></div></div>
+        <div><div class="hours-row"><span class="hours-day">Friday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Saturday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Sunday</span><span class="hours-time">Open 24hr</span></div></div>
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:1.25rem">
+        <div>
+          <h3>Reviews</h3>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:.3rem">
+            <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--amber)">4.5</div>
+            <div>
+              <div style="display:flex;gap:2px">
+                ${[1,2,3,4,5].map(i => `<svg width="14" height="14" viewBox="0 0 24 24" style="fill:${i<=4?'var(--amber)':'rgba(245,166,35,.3)'};stroke:none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}
+              </div>
+              <div style="font-size:.72rem;color:var(--muted)">128 reviews</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="reviews-list">
+        <div class="review-item">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
+            <div class="review-stars">${[1,2,3,4,5].map(()=>`<svg class="review-star" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}</div>
+            <span style="font-size:.72rem;color:var(--muted)">2 days ago</span>
+          </div>
+          <div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">Excellent Service!</div>
+          <p class="review-text">Very clean and well-maintained parking. The EV charging stations work perfectly. Staff was very helpful.</p>
+          <div class="review-author">
+            <div class="avatar avatar-sm">AB</div>
+            <div><div style="font-weight:500">Alice Brown</div><span class="badge badge-green" style="margin-left:4px">Verified</span></div>
+          </div>
+        </div>
+        <div class="review-item">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
+            <div class="review-stars">${[1,2,3,4,5].map(i=>`<svg class="review-star" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}</div>
+            <span style="font-size:.72rem;color:var(--muted)">1 week ago</span>
+          </div>
+          <div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">Always Reliable</div>
+          <p class="review-text">I use this parking regularly. Never had any issues. Great security and always clean. The QR entry system saves so much time.</p>
+          <div class="review-author">
+            <div class="avatar avatar-sm">BD</div>
+            <div><div style="font-weight:500">Bob Davis</div><span class="badge badge-green" style="margin-left:4px">Verified</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky booking card -->
+  <div class="detail-sticky">
+    <div class="book-card">
+      <div class="flex-between" style="margin-bottom:1rem">
+        <div>
+          <div class="price-big">₹650<span class="price-unit">/hr</span></div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:2px">₹3,750/day</div>
+        </div>
+        <div style="text-align:right">
+          <div class="badge badge-green" style="margin-bottom:4px">Open Now</div>
+          <div style="font-size:.72rem;color:var(--muted)">45 of 150 free</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem">
+        <div class="form-group">
+          <label class="form-label">Check in</label>
+          <input type="datetime-local" class="form-input" id="detail-start">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Check out</label>
+          <input type="datetime-local" class="form-input" id="detail-end">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vehicle type</label>
+          <select class="form-select" id="detail-vehicle">
+            <option value="car">🚗 Car</option>
+            <option value="ev">⚡ EV</option>
+            <option value="motorcycle">🏍️ Motorcycle</option>
+            <option value="truck">🚛 Truck</option>
+            <option value="heavy">🚌 Heavy (Bus/Truck)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="detail-estimate" style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.25rem;display:none">
+        <div class="flex-between" style="margin-bottom:.4rem;font-size:.85rem"><span style="color:var(--muted)">Duration</span><span id="est-dur">—</span></div>
+        <div class="flex-between" style="margin-bottom:.4rem;font-size:.85rem"><span style="color:var(--muted)">Base amount</span><span id="est-base">—</span></div>
+        <div class="flex-between" style="margin-bottom:.4rem;font-size:.85rem"><span style="color:var(--muted)">Tax (10%)</span><span id="est-tax">—</span></div>
+        <hr>
+        <div class="flex-between" style="font-weight:600"><span>Total</span><span id="est-total" style="color:var(--amber)">—</span></div>
+      </div>
+
+      <a href="#" class="btn btn-primary btn-lg w-full" style="justify-content:center" id="detail-book-btn">Book this spot →</a>
+      <p style="font-size:.72rem;color:var(--muted);text-align:center;margin-top:.75rem">Free cancellation up to 1 hour before</p>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const parkingId      = urlParams.get('id') || '';
+const parkingName    = urlParams.get('name')    || 'Parking Location';
+const parkingAddress = urlParams.get('address') || '';
+const parkingPrice   = parseInt(urlParams.get('price')) || 0;
+
+// Set title and address from URL params
+const detailName = document.getElementById('detail-name');
+const detailAddr = document.getElementById('detail-address');
+if (detailName) detailName.textContent = parkingName;
+if (detailAddr) detailAddr.innerHTML   = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${parkingAddress}`;
+
+document.getElementById('detail-book-btn').href = `booking.html?id=${parkingId}&name=${encodeURIComponent(parkingName)}&address=${encodeURIComponent(parkingAddress)}&price=${parkingPrice}`;
+
+// Generate slot map
+const slotGrid = document.getElementById('slot-grid');
+const slots = [];
+for(let i=1;i<=40;i++){
+  let type='available', label='A'+i;
+  if(i<=3){type='slot-handicap';label='H'+i;}
+  else if(i>=4&&i<=8){type='slot-ev';label='E'+(i-3);}
+  else if(Math.random()<0.35){type='slot-occupied';}
+  slots.push({label,type});
+}
+slotGrid.innerHTML = slots.map(s=>`<div class="slot-cell slot-${s.type==='available'?'available':s.type}" onclick="selectSlot(this,'${s.label}')">${s.label}</div>`).join('');
+
+let selectedSlot = null;
+function selectSlot(el, label){
+  if(el.classList.contains('slot-occupied')) return;
+  document.querySelectorAll('.slot-cell').forEach(c=>c.classList.remove('slot-selected'));
+  el.classList.add('slot-selected');
+  selectedSlot = label;
+  toast(`Slot ${label} selected`, 'success');
+}
+
+// Date estimation
+function setDefaultDates(){
+  const now = new Date();
+  const end = new Date(now.getTime() + 2*60*60*1000);
+  const fmt = d => d.toISOString().slice(0,16);
+  document.getElementById('detail-start').value = fmt(now);
+  document.getElementById('detail-end').value = fmt(end);
+  calcEstimate();
+}
+
+function calcEstimate(){
+  const s = new Date(document.getElementById('detail-start').value);
+  const e = new Date(document.getElementById('detail-end').value);
+  if(!s||!e||e<=s) return;
+  const hrs = (e-s)/3600000;
+  const base = Math.round(hrs*(parkingPrice||50)*100)/100;
+  const tax  = Math.round(base*.1*100)/100;
+  const total= Math.round((base+tax)*100)/100;
+  document.getElementById('est-dur').textContent  = hrs.toFixed(1)+' hrs';
+  document.getElementById('est-base').textContent = '₹'+Math.round(base);
+  document.getElementById('est-tax').textContent  = '₹'+Math.round(tax);
+  document.getElementById('est-total').textContent= '₹'+Math.round(total);
+  document.getElementById('detail-estimate').style.display='block';
+  const url = `booking.html?id=${parkingId}&name=${encodeURIComponent(parkingName)}&address=${encodeURIComponent(parkingAddress)}&price=${parkingPrice}&start=${encodeURIComponent(s.toISOString())}&end=${encodeURIComponent(e.toISOString())}`;
+  document.getElementById('detail-book-btn').href = url;
+}
+
+document.getElementById('detail-start')?.addEventListener('change', calcEstimate);
+document.getElementById('detail-end')?.addEventListener('change', calcEstimate);
+
+function toggleFavorite(btn){
+  const saved = btn.classList.toggle('btn-primary');
+  btn.classList.toggle('btn-outline',!saved);
+  toast(saved ? 'Added to saved spots' : 'Removed from saved spots', saved ? 'success' : 'info');
+}
+function shareLocation(){
+  navigator.clipboard?.writeText(window.location.href).then(()=>toast('Link copied!','success'));
+}
+
+document.addEventListener('DOMContentLoaded',setDefaultDates);
+</script>
+</body>
+</html>

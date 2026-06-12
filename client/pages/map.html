@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find Parking — ParkIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/map.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  body { overflow: hidden; }
+  .map-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.5rem; background: rgba(10,10,10,.92);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- ── Nav ── -->
+<nav class="map-nav">
+  <a href="index.html" class="nav-logo"><div class="logo-dot"></div>Park<span>IQ</span></a>
+  <div style="display:flex;align-items:center;gap:.75rem" id="map-nav-right">
+    <a href="dashboard.html" class="btn btn-ghost btn-sm" data-auth="user" id="dash-link">Dashboard</a>
+    <a href="booking-history.html" class="btn btn-ghost btn-sm" data-auth="user">My Bookings</a>
+    <a href="login.html" class="btn btn-primary btn-sm" data-auth="guest">Sign in</a>
+    <a href="profile.html" class="btn btn-outline btn-sm" data-auth="user" id="nav-user-name">Account</a>
+  </div>
+</nav>
+
+<!-- ── Layout ── -->
+<div class="map-page-layout">
+
+  <!-- Sidebar -->
+  <div class="map-sidebar">
+    <div class="map-search-box">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="map-search" placeholder="Search by name, address, city…">
+      </div>
+      <div class="map-filters">
+        <button class="filter-chip" data-filter="ev">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>EV
+        </button>
+        <button class="filter-chip" data-filter="covered">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Covered
+        </button>
+        <button class="filter-chip" data-filter="handicap">♿ Handicap</button>
+        <button class="filter-chip" data-filter="security">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Security
+        </button>
+        <button class="filter-chip" data-filter="open24">🕐 24hr</button>
+        <button class="filter-chip" id="filter-price-btn" onclick="togglePriceFilter()">$ Max price</button>
+      </div>
+      <div id="price-filter-wrap" style="display:none;margin-top:.75rem">
+        <div class="flex-between" style="margin-bottom:4px">
+          <span style="font-size:.75rem;color:var(--muted)">Max price per hour</span>
+          <span style="font-size:.75rem;color:var(--amber)" id="price-val">₹1500</span>
+        </div>
+        <input type="range" min="2" max="2500" value="1500" id="price-range"
+          style="width:100%;accent-color:var(--amber)"
+          oninput="document.getElementById('price-val').textContent='₹'+this.value">
+      </div>
+    </div>
+
+    <div class="sort-bar">
+      <span class="result-count" id="result-count">Loading…</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="sort-label">Sort:</span>
+        <select class="sort-select" id="sort-select">
+          <option value="distance">Distance</option>
+          <option value="price">Price</option>
+          <option value="rating">Rating</option>
+          <option value="availability">Availability</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="parking-list" id="parking-list"></div>
+  </div>
+
+  <!-- Map — clean single block, no duplicates -->
+  <div class="map-container">
+
+    <!-- Leaflet renders here -->
+    <div id="leaflet-map"></div>
+
+    <!-- Controls -->
+    <div class="map-controls">
+      <button class="map-ctrl-btn" id="zoom-in" title="Zoom in">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="map-ctrl-btn" id="zoom-out" title="Zoom out">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.4rem .6rem">
+        <select id="radius-select" style="background:transparent;border:none;color:var(--muted);font-size:.72rem;outline:none;cursor:pointer">
+          <option value="5">5 km</option>
+          <option value="10">10 km</option>
+          <option value="20">20 km</option>
+          <option value="50" selected>50 km</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Locate button -->
+    <button class="locate-btn" id="locate-btn" title="Find my location">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+    </button>
+
+    <!-- Detail drawer -->
+    <div class="detail-drawer" id="detail-drawer"></div>
+
+  </div><!-- /.map-container -->
+
+</div><!-- /.map-page-layout -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/map.js"></script>
+<script>
+function togglePriceFilter() {
+  const wrap = document.getElementById('price-filter-wrap');
+  const btn  = document.getElementById('filter-price-btn');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  btn.classList.toggle('active', open);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = typeof auth !== 'undefined' ? auth.getUser() : null;
+  if (user) {
+    const dashLink = document.getElementById('dash-link');
+    const accLink  = document.getElementById('nav-user-name');
+    if (dashLink && user.role === 'owner') {
+      dashLink.href = 'owner-dashboard.html';
+    }
+    if (accLink) {
+      accLink.textContent = user.firstName || 'Account';
+      if (user.role === 'owner') accLink.href = 'owner-dashboard.html';
+    }
+  }
+});
+</script>
+</body>
+</html>

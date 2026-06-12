@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owner Dashboard — ParkIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <style>
+    /* ── Leaflet tile fix: prevent global CSS resets from breaking map tiles ── */
+    #lot-picker-map { background: #e8e0d8; }
+    #lot-picker-map img.leaflet-tile {
+      max-width: none !important;
+      max-height: none !important;
+      width: 256px !important;
+      height: 256px !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      display: inline !important;
+      opacity: 1 !important;
+    }
+    #lot-picker-map .leaflet-layer,
+    #lot-picker-map .leaflet-tile-container {
+      opacity: 1 !important;
+    }
+    .lot-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 1rem;
+      transition: border-color .2s
+    }
+
+    .lot-card:hover {
+      border-color: rgba(255, 255, 255, .12)
+    }
+
+    .lot-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .lot-card-body {
+      padding: 1.25rem 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .lot-card-footer {
+      padding: .85rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: .75rem;
+      background: var(--bg3)
+    }
+
+    .lot-stat {
+      font-size: .78rem
+    }
+
+    .lot-stat-label {
+      color: var(--muted);
+      margin-bottom: 2px
+    }
+
+    .lot-stat-val {
+      font-weight: 600;
+      font-size: 1rem
+    }
+
+    .occupancy-bar {
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: .4rem
+    }
+
+    .occupancy-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--amber);
+      transition: width .5s ease
+    }
+
+    .slot-mgmt-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 5px
+    }
+
+    .slot-mgmt-cell {
+      height: 32px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .6rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all .15s
+    }
+
+    .sm-available {
+      background: rgba(76, 175, 80, .12);
+      color: #4CAF50;
+      border-color: rgba(76, 175, 80, .25)
+    }
+
+    .sm-occupied {
+      background: rgba(255, 255, 255, .05);
+      color: var(--muted);
+      cursor: default
+    }
+
+    .sm-maintenance {
+      background: rgba(245, 158, 11, .1);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, .25)
+    }
+
+    .sm-ev {
+      background: rgba(59, 130, 246, .1);
+      color: #3B82F6;
+      border-color: rgba(59, 130, 246, .25)
+    }
+
+    .sm-available:hover {
+      background: rgba(76, 175, 80, .25)
+    }
+
+    .tab-panels>div {
+      display: none
+    }
+
+    .tab-panels>div.active {
+      display: block
+    }
+
+    .payout-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .payout-row:last-child {
+      border-bottom: none
+    }
+  </style>
+</head>
+
+<body>
+  <div id="page-loader" class="page-loader">
+    <div class="spinner"></div>
+  </div>
+  <div id="toast-container"></div>
+
+  <div class="dash-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <a href="index.html" class="nav-logo" style="font-size:1.1rem">
+            <div class="logo-dot"></div>Park<span>IQ</span>
+          </a>
+          <span class="role-chip role-chip-owner" id="role-badge">Owner</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="sidebar-link active" onclick="switchTab('overview',this)">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Overview
+        </a>
+        <a href="#" class="sidebar-link" onclick="switchTab('lots',this)">
+          <svg viewBox="0 0 24 24">
+            <rect x="1" y="3" width="15" height="13" />
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+            <circle cx="5.5" cy="18.5" r="2.5" />
+            <circle cx="18.5" cy="18.5" r="2.5" />
+          </svg>
+          My Lots
+          <span class="badge-count" id="lots-count">0</span>
+        </a>
+        <a href="#" class="sidebar-link" onclick="switchTab('slots',this)">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          Slot Manager
+        </a>
+        <a href="#" class="sidebar-link" onclick="switchTab('bookings',this)">
+          <svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          Bookings
+        </a>
+        <a href="#" class="sidebar-link" onclick="switchTab('revenue',this)">
+          <svg viewBox="0 0 24 24">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          Revenue
+        </a>
+        <a href="#" class="sidebar-link" onclick="switchTab('reviews',this)">
+          <svg viewBox="0 0 24 24">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Reviews
+        </a>
+        <div class="nav-section-label">Account</div>
+        <a href="profile.html" class="sidebar-link">
+          <svg viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          Profile
+        </a>
+        <a href="#" class="sidebar-link" data-logout>
+          <svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign Out
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar avatar-sm" id="sidebar-avatar">?</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-name">Loading…</div>
+            <div class="sidebar-user-role" style="color:var(--amber)" id="sidebar-role">Parking Owner</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="dash-topbar">
+        <div>
+          <div class="topbar-title" id="topbar-title">Owner Dashboard</div>
+          <div style="font-size:.75rem;color:rgba(255,255,255,0.5)" id="owner-subtitle">Owner Dashboard</div>
+        </div>
+        <div class="topbar-right">
+          <button class="notif-btn"><svg viewBox="0 0 24 24">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <div class="notif-dot"></div>
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('add-lot-modal')">+ Add Lot</button>
+        </div>
+      </div>
+
+      <div class="dash-content">
+        <div class="tab-panels">
+
+          <!-- OVERVIEW -->
+          <div id="tab-overview" class="active">
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="flex-between">
+                  <div class="stat-card-label">Total Revenue</div>
+                  <div class="stat-icon"
+                    style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--amber)">₹</div>
+                </div>
+                <div class="stat-card-value" style="color:var(--amber)" id="owner-revenue">₹0.00</div>
+                <div class="stat-card-sub">Platform charges 15% commission</div>
+              </div>
+              <div class="stat-card">
+                <div class="flex-between">
+                  <div class="stat-card-label">Active Bookings</div>
+                  <div class="stat-icon"><svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" />
+                    </svg></div>
+                </div>
+                <div class="stat-card-value" id="owner-active-bk">0</div>
+                <div class="stat-card-sub">across all lots</div>
+              </div>
+              <div class="stat-card">
+                <div class="flex-between">
+                  <div class="stat-card-label">Total Slots</div>
+                  <div class="stat-icon"><svg viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                    </svg></div>
+                </div>
+                <div class="stat-card-value" id="owner-total-slots">0</div>
+                <div class="stat-card-sub" id="owner-free-slots">add lots to see availability</div>
+              </div>
+              <div class="stat-card">
+                <div class="flex-between">
+                  <div class="stat-card-label">Avg Rating</div>
+                  <div class="stat-icon"><svg viewBox="0 0 24 24">
+                      <polygon
+                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg></div>
+                </div>
+                <div class="stat-card-value" style="color:var(--amber)" id="owner-rating">—</div>
+                <div class="stat-card-sub" id="owner-review-sub">no reviews yet</div>
+              </div>
+            </div>
+
+            <div class="dash-grid-2" style="margin-bottom:1.5rem">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <div class="chart-title">Revenue — Last 7 Days</div>
+                </div>
+                <div class="chart-area">
+                  <div class="bar-chart" id="owner-rev-chart"></div>
+                </div>
+              </div>
+              <div class="chart-card">
+                <div class="chart-header">
+                  <div class="chart-title">Bookings per Day</div>
+                </div>
+                <div class="chart-area">
+                  <div class="bar-chart" id="owner-bk-chart"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick lot status -->
+            <div class="table-card">
+              <div class="table-header">
+                <div class="table-title">Lot Status</div><button class="btn btn-ghost btn-sm"
+                  onclick="switchTab('lots')">Manage →</button>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Lot</th>
+                    <th>Availability</th>
+                    <th>Today's Bookings</th>
+                    <th>Revenue Today</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="lot-status-tbody">
+                  <tr>
+                    <td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No lots
+                      added yet. <button class="btn btn-primary btn-sm" onclick="switchTab('lots')"
+                        style="margin-left:.5rem">Add your first lot →</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- MY LOTS -->
+          <div id="tab-lots">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem">
+              <button class="btn btn-primary btn-sm" onclick="openModal('add-lot-modal')">+ Add New Lot</button>
+            </div>
+
+            <div id="lots-list">
+              <div id="no-lots-msg"
+                style="text-align:center;padding:3rem 1rem;color:var(--muted);border:1px dashed var(--border);border-radius:var(--radius-lg)">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
+                  style="margin-bottom:1rem;opacity:.35">
+                  <rect x="1" y="3" width="15" height="13" />
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                  <circle cx="5.5" cy="18.5" r="2.5" />
+                  <circle cx="18.5" cy="18.5" r="2.5" />
+                </svg>
+                <div style="font-size:1rem;font-weight:600;margin-bottom:.4rem">No lots added yet</div>
+                <div style="font-size:.85rem">Click "+ Add New Lot" to list your first parking location.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SLOT MANAGER -->
+          <div id="tab-slots">
+            <!-- Shown only when a lot is selected -->
+            <div id="slot-manager-controls"
+              style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+              <select class="form-select" style="width:auto" id="lot-select" onchange="onLotSelectChange()">
+                <option value="">— Select a lot —</option>
+              </select>
+              <select class="form-select" style="width:auto" id="floor-select" onchange="buildSlotGrid()"
+                style="display:none"></select>
+              <div id="slot-legend" style="display:none;gap:.5rem;margin-left:auto">
+                <div style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted)"><span
+                    style="width:10px;height:10px;border-radius:2px;background:rgba(76,175,80,.2);display:inline-block"></span>Available
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted)"><span
+                    style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.06);display:inline-block"></span>Occupied
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted)"><span
+                    style="width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,.15);display:inline-block"></span>EV
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--muted)"><span
+                    style="width:10px;height:10px;border-radius:2px;background:rgba(245,158,11,.15);display:inline-block"></span>Maintenance
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty state: no lots added yet -->
+            <div id="slot-empty-state" class="card" style="text-align:center;padding:3rem 2rem">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                style="color:var(--muted);margin:0 auto 1rem">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <h3 style="font-size:1rem;margin-bottom:.5rem">No Parking Lots Added</h3>
+              <p style="color:var(--muted);font-size:.875rem;margin-bottom:1.5rem">Add your first parking lot to start
+                managing slots.</p>
+              <button class="btn btn-primary btn-sm" onclick="openModal('add-lot-modal')">+ Add Lot</button>
+            </div>
+
+            <!-- Slot grid: shown after lot selected -->
+            <div id="slot-grid-container" style="display:none">
+              <div class="card" style="margin-bottom:1.5rem">
+                <div class="flex-between" style="margin-bottom:1rem">
+                  <h3 style="font-size:.95rem" id="slot-grid-title">Floor — 0 slots</h3>
+                  <div style="font-size:.78rem;color:var(--muted)">Click a slot to change its status</div>
+                </div>
+                <div class="slot-mgmt-grid" id="slot-manager-grid"></div>
+              </div>
+              <div style="display:flex;gap:.75rem">
+                <button class="btn btn-outline btn-sm" onclick="setFloorMaintenance()">Set Floor to Maintenance</button>
+                <button class="btn btn-primary btn-sm" onclick="saveSlotChanges()">Save Changes</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOOKINGS -->
+          <div id="tab-bookings">
+            <div class="table-card">
+              <div class="table-header">
+                <div class="table-title">Bookings at My Lots</div><button class="btn btn-outline btn-sm"
+                  onclick="toast('Exported!','success')">⬇ Export</button>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>User</th>
+                    <th>Lot</th>
+                    <th>Time</th>
+                    <th>Duration</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="owner-bookings-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No
+                      bookings yet — users will book your lots once you add them.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- REVENUE -->
+          <div id="tab-revenue">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
+              <div class="stat-card">
+                <div class="stat-card-label">This Month</div>
+                <div class="stat-card-value" style="color:var(--amber)">₹0.00</div>
+                <div class="stat-card-sub">After 15% platform fee</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">Pending Payout</div>
+                <div class="stat-card-value">₹0.00</div>
+                <div class="stat-card-sub">Next scheduled payout</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-label">All Time</div>
+                <div class="stat-card-value">₹0.00</div>
+                <div class="stat-card-sub">All time earnings</div>
+              </div>
+            </div>
+            <div class="dash-grid-2">
+              <div class="chart-card">
+                <div class="chart-header">
+                  <div class="chart-title">Monthly Revenue</div>
+                </div>
+                <div class="chart-area">
+                  <div class="bar-chart" id="monthly-rev-chart"></div>
+                </div>
+              </div>
+              <div class="card">
+                <h3 style="font-size:.95rem;margin-bottom:1.25rem">Payout History</h3>
+                <div id="payout-history-list">
+                  <!-- Populated dynamically after owner has activity -->
+                </div>
+                <div id="payout-empty-state" style="text-align:center;padding:2rem 1rem;color:var(--muted)">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"
+                    style="margin:0 auto .75rem;display:block;opacity:.4">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                  <div style="font-size:.85rem;margin-bottom:.25rem;font-weight:500">No payout history yet</div>
+                  <div style="font-size:.75rem">Payouts will appear here once you have completed bookings.</div>
+                </div>
+                <div style="margin-top:1.25rem">
+                  <button class="btn btn-outline w-full" style="justify-content:center"
+                    onclick="toast('Bank details updated','success')">Update Bank Account</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REVIEWS -->
+          <div id="tab-reviews">
+            <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+              <select class="form-select" style="width:auto" id="review-filter-lot">
+                <option>All Lots</option>
+              </select>
+              <select class="form-select" style="width:auto" id="review-filter-rating">
+                <option>All Ratings</option>
+                <option>5 Stars</option>
+                <option>4 Stars</option>
+                <option>3 Stars</option>
+                <option>2 Stars</option>
+                <option>1 Star</option>
+              </select>
+            </div>
+            <!-- Reviews loaded dynamically from API -->
+            <div id="reviews-list" style="display:flex;flex-direction:column;gap:1rem"></div>
+            <!-- Empty state shown when no reviews exist -->
+            <div id="reviews-empty" style="text-align:center;padding:3rem 1rem;color:var(--muted)">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                style="margin-bottom:1rem;opacity:.4">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <div style="font-weight:500;margin-bottom:.3rem">No reviews yet</div>
+              <div style="font-size:.85rem">Reviews from customers will appear here after bookings are completed.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Lot Modal -->
+  <div class="modal-overlay" id="add-lot-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Add New Parking Lot</div>
+        <button class="modal-close" data-modal-close="add-lot-modal"><svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg></button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1.5rem;padding:1rem 1.5rem">
+        <div class="form-group"><label class="form-label">Lot Name <span
+              style="color:var(--danger)">*</span></label><input type="text" class="form-input" data-field="lot-name"
+            placeholder="e.g. Haridwar ISBT Parking"></div>
+        <div class="form-group"><label class="form-label">Address <span
+              style="color:var(--danger)">*</span></label><input type="text" class="form-input" data-field="lot-address"
+            placeholder="Full street address"></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">City <span
+                style="color:var(--danger)">*</span></label><input type="text" class="form-input" data-field="lot-city"
+              placeholder="Dehradun"></div>
+          <div class="form-group"><label class="form-label">ZIP</label><input type="text" class="form-input"
+              data-field="lot-zip" placeholder="248001"></div>
+        </div>
+
+        <!-- ── Location Picker Map ── -->
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:7px">
+            <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Pin Exact Location
+            <span style="font-size:.73rem;font-weight:400;color:var(--muted)">(click map or drag marker)</span>
+          </label>
+
+          <!-- Search + GPS row -->
+          <div style="display:flex;gap:.45rem;margin-bottom:.55rem">
+            <input type="text" id="lot-map-search" class="form-input"
+              style="flex:1;font-size:.85rem;padding:.45rem .7rem"
+              placeholder="Search place, landmark, area…"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();lotMapSearch()}">
+            <button type="button" onclick="lotMapSearch()"
+              style="padding:.45rem .85rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2);color:var(--text);cursor:pointer;font-size:.82rem;white-space:nowrap;display:flex;align-items:center;gap:5px">
+              <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search
+            </button>
+            <button type="button" onclick="lotMapGPS()" title="Use my GPS location"
+              style="padding:.45rem .65rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2);color:var(--text);cursor:pointer;display:flex;align-items:center">
+              <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            </button>
+          </div>
+
+          <!-- Map container -->
+          <div style="position:relative;border-radius:10px;border:1.5px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.1);overflow:hidden">
+            <div id="lot-picker-map" style="width:100%;height:300px;display:block"></div>
+            <!-- Coordinates overlay -->
+            <div id="lot-coords-badge" style="display:none;position:absolute;bottom:10px;left:10px;z-index:1000;
+              background:rgba(10,10,16,.78);color:#fff;border-radius:6px;padding:4px 10px;
+              font-size:.7rem;font-family:monospace;backdrop-filter:blur(4px);pointer-events:none"></div>
+            <!-- Zoom controls -->
+            <div style="position:absolute;top:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:4px">
+              <button onclick="lotPickerMap&&lotPickerMap.zoomIn()" type="button"
+                style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--bg1);color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+              <button onclick="lotPickerMap&&lotPickerMap.zoomOut()" type="button"
+                style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--bg1);color:var(--text);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+            </div>
+          </div>
+
+          <!-- Status + hidden coords -->
+          <input type="hidden" id="lot-lat" data-field="lot-lat">
+          <input type="hidden" id="lot-lng" data-field="lot-lng">
+          <div id="lot-map-status" style="font-size:.75rem;color:var(--muted);margin-top:.4rem;display:flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="lot-map-status-text">No location pinned yet — search or click on the map</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Total Slots <span
+                style="color:var(--danger)">*</span></label><input type="number" class="form-input"
+              data-field="lot-slots" placeholder="100"></div>
+          <div class="form-group"><label class="form-label">State</label><input type="text" class="form-input"
+              data-field="lot-state" placeholder="e.g. Uttarakhand"></div>
+        </div>
+        <div class="form-group"><label class="form-label" style="font-weight:600;color:var(--amber)">Vehicle Pricing (₹
+            per hour)</label></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2">
+                <circle cx="5.5" cy="17.5" r="2.5" />
+                <circle cx="18.5" cy="17.5" r="2.5" />
+                <path d="M15 6H4l-2 7h16l-1-4z" />
+              </svg>Bike / Two-wheeler
+            </label>
+            <input type="number" class="form-input" id="price-bike" placeholder="₹20" step="5" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2">
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>Car / Four-wheeler
+            </label>
+            <input type="number" class="form-input" id="price-car" placeholder="₹50" step="5" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2">
+                <rect x="1" y="3" width="15" height="13" />
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+                <line x1="1" y1="10" x2="16" y2="10" />
+              </svg>Heavy / Bus / Truck
+            </label>
+            <input type="number" class="form-input" id="price-heavy" placeholder="₹100" step="10" min="0">
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea"
+            placeholder="Describe your parking facility…"></textarea></div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox"
+              data-amenity="EV Charging"> EV Charging</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox"
+              data-amenity="Covered"> Covered</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox"
+              data-amenity="24 Hours"> 24 Hours</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox"
+              data-amenity="Security"> Security</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;cursor:pointer"><input type="checkbox"
+              data-amenity="CCTV"> CCTV</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-modal-close="add-lot-modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewLot()">Submit for Approval</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" id="leaflet-script"></script>
+  <script>
+    /* ─── Populate sidebar user name immediately (no DOMContentLoaded wait) ─── */
+    (function() {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) return;
+        const fullName = ((user.firstName || '') + ' ' + (user.lastName || '')).trim();
+        const initials = ((user.firstName || ' ')[0] + (user.lastName || ' ')[0]).toUpperCase();
+        const nameEl   = document.getElementById('sidebar-name');
+        const avatarEl = document.getElementById('sidebar-avatar');
+        if (nameEl)   nameEl.textContent   = fullName || 'Owner';
+        if (avatarEl) avatarEl.textContent = initials || '?';
+      } catch(_) {}
+    })();
+
+    /* ═══════════════════════════════════════════════════
+       LOT LOCATION PICKER MAP  (Leaflet + Nominatim)
+       Tile: Stadia OSM Bright — shows building footprints,
+       land use, parks, POI icons, roads & labels.
+    ═══════════════════════════════════════════════════ */
+    let lotPickerMap    = null;
+    let lotPickerMarker = null;
+
+    // Custom red parking pin icon
+    function _lotPinIcon() {
+      return L.divIcon({
+        className: '',
+        html: `<div style="
+          width:32px;height:42px;position:relative;cursor:move">
+          <svg viewBox="0 0 32 42" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="ps" x="-20%" y="-10%" width="140%" height="130%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,.35)"/>
+              </filter>
+            </defs>
+            <path d="M16 1C9.373 1 4 6.373 4 13c0 9 12 28 12 28S28 22 28 13C28 6.373 22.627 1 16 1z"
+              fill="#EF4444" stroke="#fff" stroke-width="1.5" filter="url(#ps)"/>
+            <circle cx="16" cy="13" r="5" fill="#fff"/>
+            <text x="16" y="17" text-anchor="middle" fill="#EF4444"
+              font-size="7" font-weight="700" font-family="sans-serif">P</text>
+          </svg>
+        </div>`,
+        iconSize: [32, 42],
+        iconAnchor: [16, 42],
+        popupAnchor: [0, -44]
+      });
+    }
+
+    function _setLotPin(lat, lng, label) {
+      if (!lotPickerMap) return;
+      if (lotPickerMarker) lotPickerMap.removeLayer(lotPickerMarker);
+      lotPickerMarker = L.marker([lat, lng], {
+        icon: _lotPinIcon(),
+        draggable: true,
+        autoPan: true
+      }).addTo(lotPickerMap);
+
+      if (label) lotPickerMarker.bindPopup(`<b style="font-size:.8rem">${label}</b>`).openPopup();
+
+      // Drag end — update coords
+      lotPickerMarker.on('dragend', function(e) {
+        const p = e.target.getLatLng();
+        _updateLotCoords(p.lat, p.lng);
+        _reverseGeocode(p.lat, p.lng);
+      });
+
+      _updateLotCoords(lat, lng);
+      lotPickerMap.flyTo([lat, lng], Math.max(lotPickerMap.getZoom(), 17), { animate: true, duration: 0.6 });
+    }
+
+    function _updateLotCoords(lat, lng) {
+      document.getElementById('lot-lat').value = lat.toFixed(7);
+      document.getElementById('lot-lng').value = lng.toFixed(7);
+      const badge = document.getElementById('lot-coords-badge');
+      badge.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      badge.style.display = 'block';
+      document.getElementById('lot-map-status-text').textContent =
+        `📍 Pinned at ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      document.getElementById('lot-map-status').style.color = 'var(--success)';
+    }
+
+    async function _reverseGeocode(lat, lng) {
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const d = await r.json();
+        if (d && d.display_name) {
+          const addr = d.address || {};
+          const road   = addr.road || addr.pedestrian || addr.path || '';
+          const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
+          const city   = addr.city || addr.town || addr.village || addr.county || '';
+          const shortLabel = [road, suburb, city].filter(Boolean).join(', ') || d.display_name;
+
+          if (lotPickerMarker) lotPickerMarker.bindPopup(`<b style="font-size:.8rem">${shortLabel}</b>`).openPopup();
+
+          // Auto-fill address/city if empty
+          const addrInput = document.querySelector('#add-lot-modal [data-field="lot-address"]');
+          const cityInput = document.querySelector('#add-lot-modal [data-field="lot-city"]');
+          const zipInput  = document.querySelector('#add-lot-modal [data-field="lot-zip"]');
+          const stateInput= document.querySelector('#add-lot-modal [data-field="lot-state"]');
+
+          if (addrInput && !addrInput.value.trim())
+            addrInput.value = [road, suburb].filter(Boolean).join(', ');
+          if (cityInput && !cityInput.value.trim())
+            cityInput.value = city;
+          if (zipInput && !zipInput.value.trim() && addr.postcode)
+            zipInput.value = addr.postcode;
+          if (stateInput && !stateInput.value.trim() && addr.state)
+            stateInput.value = addr.state;
+        }
+      } catch(_) {}
+    }
+
+    function initLotPickerMap() {
+      if (!window.L) { setTimeout(initLotPickerMap, 100); return; }
+
+      const el = document.getElementById('lot-picker-map');
+      if (!el) return;
+
+      // If map already exists just force a full resize
+      if (lotPickerMap) {
+        lotPickerMap.invalidateSize(true);
+        setTimeout(() => lotPickerMap.invalidateSize(true), 200);
+        setTimeout(() => lotPickerMap.invalidateSize(true), 500);
+        return;
+      }
+
+      // Force explicit pixel size on the container BEFORE Leaflet touches it
+      // This is critical — Leaflet reads offsetWidth/Height at init time
+      el.style.width  = '100%';
+      el.style.height = '300px';
+      el.style.display = 'block';
+
+      lotPickerMap = L.map('lot-picker-map', {
+        center: [20.5937, 78.9629],
+        zoom: 5,
+        zoomControl: false,
+        attributionControl: true,
+        preferCanvas: true
+      });
+
+      // ── CartoDB Voyager (most reliable, always works, no API key) ──
+      // Shows roads, parks, POIs, labels. Buildings appear at zoom 17+.
+      L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        {
+          attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
+          subdomains: 'abcd',
+          maxZoom: 20
+        }
+      ).addTo(lotPickerMap);
+
+      // Auto-locate: show current position as blue dot AND fly to it
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          // Fly to user's location
+          lotPickerMap.flyTo([lat, lng], 16, { animate: true, duration: 0.8 });
+
+          // Blue "You are here" dot (not the parking pin)
+          const youDot = L.divIcon({
+            className: '',
+            html: `<div style="position:relative;width:20px;height:20px">
+              <div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.25);animation:pulse-ring 1.8s ease-out infinite"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#3B82F6;border:2px solid #fff;box-shadow:0 2px 6px rgba(59,130,246,.6)"></div>
+            </div>
+            <style>@keyframes pulse-ring{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.8);opacity:0}}</style>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+
+          L.marker([lat, lng], { icon: youDot, zIndexOffset: -100, interactive: false })
+            .addTo(lotPickerMap)
+            .bindTooltip('📍 Your location', { permanent: false, direction: 'top', offset: [0, -12] });
+
+          // Update the status bar to guide the user
+          const statusText = document.getElementById('lot-map-status-text');
+          if (statusText && !lotPickerMarker) {
+            statusText.textContent = 'Your location is shown. Click on the map or drag to pin your lot.';
+          }
+        }, () => {}, { timeout: 6000, enableHighAccuracy: true });
+      }
+
+      // Click anywhere to drop a pin
+      lotPickerMap.on('click', function(e) {
+        _setLotPin(e.latlng.lat, e.latlng.lng);
+        _reverseGeocode(e.latlng.lat, e.latlng.lng);
+      });
+
+      // invalidateSize at multiple intervals to survive CSS transitions
+      setTimeout(() => lotPickerMap.invalidateSize(true), 100);
+      setTimeout(() => lotPickerMap.invalidateSize(true), 300);
+      setTimeout(() => lotPickerMap.invalidateSize(true), 600);
+    }
+
+    async function lotMapSearch() {
+      const q = document.getElementById('lot-map-search').value.trim();
+      if (!q) return;
+      const btn = document.querySelector('[onclick="lotMapSearch()"]');
+      if (btn) { btn.textContent = '…'; btn.disabled = true; }
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const results = await r.json();
+        if (results.length) {
+          const place = results[0];
+          _setLotPin(parseFloat(place.lat), parseFloat(place.lon), place.display_name.split(',').slice(0,2).join(','));
+          _reverseGeocode(parseFloat(place.lat), parseFloat(place.lon));
+        } else {
+          const status = document.getElementById('lot-map-status-text');
+          if (status) { status.textContent = 'No results found — try a different search'; }
+          document.getElementById('lot-map-status').style.color = 'var(--danger)';
+        }
+      } catch(_) {
+        const status = document.getElementById('lot-map-status-text');
+        if (status) status.textContent = 'Search failed — check your connection';
+      } finally {
+        if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;vertical-align:-2px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Search'; btn.disabled = false; }
+      }
+    }
+
+    function lotMapGPS() {
+      if (!navigator.geolocation) { return; }
+      const btn = document.querySelector('[onclick="lotMapGPS()"]');
+      if (btn) btn.style.opacity = '.5';
+      navigator.geolocation.getCurrentPosition(pos => {
+        _setLotPin(pos.coords.latitude, pos.coords.longitude);
+        _reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        if (btn) btn.style.opacity = '1';
+      }, () => {
+        if (btn) btn.style.opacity = '1';
+      }, { timeout: 8000 });
+    }
+
+    // Init map when the Add Lot modal opens
+    // Wait for the CSS scale/opacity transition to fully complete first
+    const _origOpenModal = window.openModal;
+    window.openModal = function(id) {
+      if (_origOpenModal) _origOpenModal(id);
+      if (id === 'add-lot-modal') {
+        // 400ms covers the CSS transition + a bit of breathing room
+        // then a second call at 800ms in case of slow transitions
+        setTimeout(initLotPickerMap, 400);
+        setTimeout(initLotPickerMap, 800);
+      }
+    };
+  </script>
+  <script>
+    function switchTab(tab, el) {
+      document.querySelectorAll('.tab-panels > div').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab)?.classList.add('active');
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      if (el) el.classList.add('active');
+      const titles = { overview: 'Owner Dashboard', lots: 'My Lots', slots: 'Slot Manager', bookings: 'Bookings', revenue: 'Revenue & Payouts', reviews: 'Customer Reviews' };
+      document.getElementById('topbar-title').textContent = titles[tab] || '';
+    }
+
+    function showReplyBox(btn) {
+      const box = btn.closest('.card').querySelector('.reply-box');
+      box?.classList.toggle('hidden');
+    }
+
+    function buildCharts() {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+      // Load real bookings from localStorage (set by submitNewLot/bookings flow)
+      const lots = _loadOwnerLots();
+      const bookings = _loadOwnerBookings();
+
+      // Build revenue & booking arrays from actual booking data
+      const rev = Array(7).fill(0);
+      const bks = Array(7).fill(0);
+      const mrev = Array(6).fill(0);
+      const now = new Date();
+
+      bookings.forEach(b => {
+        const d = new Date(b.date);
+        const dayDiff = Math.floor((now - d) / 86400000);
+        if (dayDiff >= 0 && dayDiff < 7) {
+          const dow = (d.getDay() + 6) % 7; // Mon=0
+          rev[dow] = +(rev[dow] + (b.amount || 0)).toFixed(2);
+          bks[dow] = bks[dow] + 1;
+        }
+        const mDiff = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
+        if (mDiff >= 0 && mDiff < 6) {
+          mrev[5 - mDiff] = +(mrev[5 - mDiff] + (b.amount || 0)).toFixed(2);
+        }
+      });
+
+      const hasAnyRev = rev.some(v => v > 0);
+      const hasAnyBks = bks.some(v => v > 0);
+      const hasAnyMrev = mrev.some(v => v > 0);
+
+      const emptyMsg = (label) => `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:.8rem;gap:.5rem;opacity:.6">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-4"/></svg>
+      <span>${label}</span>
+    </div>`;
+
+      const maxR = Math.max(...rev) || 1;
+      const maxB = Math.max(...bks) || 1;
+      const maxM = Math.max(...mrev) || 1;
+
+      const rc = document.getElementById('owner-rev-chart');
+      if (rc) rc.innerHTML = hasAnyRev
+        ? days.map((d, i) => `<div class="bar-group"><div class="bar-val">${rev[i] ? '₹' + rev[i] : ''}</div><div class="bar" style="height:${rev[i] / maxR * 100}%"></div><div class="bar-label">${d}</div></div>`).join('')
+        : emptyMsg('No revenue yet — add lots and get bookings');
+
+      const bc = document.getElementById('owner-bk-chart');
+      if (bc) bc.innerHTML = hasAnyBks
+        ? days.map((d, i) => `<div class="bar-group"><div class="bar-val">${bks[i] || ''}</div><div class="bar" style="height:${bks[i] / maxB * 100}%"></div><div class="bar-label">${d}</div></div>`).join('')
+        : emptyMsg('No bookings yet — publish your first lot');
+
+      const mc = document.getElementById('monthly-rev-chart');
+      if (mc) mc.innerHTML = hasAnyMrev
+        ? months.map((m, i) => `<div class="bar-group"><div class="bar-val">${mrev[i] ? '₹' + mrev[i] : ''}</div><div class="bar" style="height:${mrev[i] / maxM * 100}%"></div><div class="bar-label">${m}</div></div>`).join('')
+        : emptyMsg('Monthly revenue will appear after bookings');
+    }
+
+    /* ── Owner Lot & Slot Manager (localStorage per owner) ── */
+    function _ownerLotKey() {
+      const user = auth.getUser();
+      return 'owner_lots_' + (user?._id || user?.id || user?.email || 'default');
+    }
+    function _loadOwnerLots() {
+      try { return JSON.parse(localStorage.getItem(_ownerLotKey())) || []; } catch { return []; }
+    }
+    function _saveOwnerLots(lots) {
+      localStorage.setItem(_ownerLotKey(), JSON.stringify(lots));
+    }
+    function _loadOwnerBookings() {
+      try { return JSON.parse(localStorage.getItem(_ownerLotKey() + '_bookings')) || []; } catch { return []; }
+    }
+
+    function refreshLotSelect() {
+      const lots = _loadOwnerLots();
+      const sel = document.getElementById('lot-select');
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">— Select a lot —</option>' +
+        lots.map((l, i) => `<option value="${i}">${l.name}</option>`).join('');
+      if (prev && lots[parseInt(prev)]) sel.value = prev;
+
+      const emptyState = document.getElementById('slot-empty-state');
+      if (emptyState) emptyState.style.display = lots.length ? 'none' : '';
+    }
+
+    function onLotSelectChange() {
+      const sel = document.getElementById('lot-select');
+      const idx = sel.value;
+      const lots = _loadOwnerLots();
+      const gridContainer = document.getElementById('slot-grid-container');
+      const floorSel = document.getElementById('floor-select');
+      const legend = document.getElementById('slot-legend');
+
+      if (idx === '' || !lots[parseInt(idx)]) {
+        if (gridContainer) gridContainer.style.display = 'none';
+        if (floorSel) floorSel.style.display = 'none';
+        if (legend) legend.style.display = 'none';
+        return;
+      }
+
+      const lot = lots[parseInt(idx)];
+      // Populate floor select
+      if (floorSel) {
+        floorSel.style.display = '';
+        const floors = lot.floors || ['Ground Floor'];
+        floorSel.innerHTML = floors.map((f, i) => `<option value="${i}">${f}</option>`).join('');
+      }
+      if (legend) legend.style.display = 'flex';
+      buildSlotGrid();
+    }
+
+    function buildSlotGrid() {
+      const sel = document.getElementById('lot-select');
+      const floorSel = document.getElementById('floor-select');
+      const idx = sel ? parseInt(sel.value) : NaN;
+      const lots = _loadOwnerLots();
+      const grid = document.getElementById('slot-manager-grid');
+      const gridContainer = document.getElementById('slot-grid-container');
+      const titleEl = document.getElementById('slot-grid-title');
+
+      if (isNaN(idx) || !lots[idx]) {
+        if (gridContainer) gridContainer.style.display = 'none';
+        return;
+      }
+      if (gridContainer) gridContainer.style.display = '';
+
+      const lot = lots[idx];
+      const floorIdx = floorSel ? parseInt(floorSel.value) || 0 : 0;
+      const floorName = (lot.floors || ['Ground Floor'])[floorIdx] || 'Ground Floor';
+      const totalSlots = parseInt(lot.totalSlots) || 10;
+
+      if (titleEl) titleEl.textContent = `${floorName} — ${totalSlots} slots`;
+
+      // Load saved slot states for this lot+floor, or default all to available
+      const stateKey = `slot_state_${_ownerLotKey()}_${idx}_${floorIdx}`;
+      let savedStates = [];
+      try { savedStates = JSON.parse(localStorage.getItem(stateKey)) || []; } catch { }
+
+      const slots = [];
+      for (let i = 1; i <= totalSlots; i++) {
+        const saved = savedStates[i - 1];
+        const cls = saved || 'sm-available';
+        const lbl = cls === 'sm-ev' ? 'E' + i : 'A' + i;
+        slots.push({ cls, lbl: saved === 'sm-ev' ? lbl : 'A' + i });
+      }
+
+      if (!grid) return;
+      grid.innerHTML = slots.map((s, i) =>
+        `<div class="slot-mgmt-cell ${s.cls}" data-slot="${i}" onclick="cycleSlot(this)">${s.lbl}</div>`
+      ).join('');
+    }
+
+    function cycleSlot(el) {
+      const states = ['sm-available', 'sm-maintenance', 'sm-ev'];
+      let curr = states.findIndex(c => el.classList.contains(c));
+      states.forEach(c => el.classList.remove(c));
+      const next = states[(curr + 1) % states.length];
+      el.classList.add(next);
+      // Update label
+      const slotNum = parseInt(el.dataset.slot) + 1;
+      el.textContent = next === 'sm-ev' ? 'E' + slotNum : 'A' + slotNum;
+    }
+
+    function setFloorMaintenance() {
+      document.querySelectorAll('#slot-manager-grid .slot-mgmt-cell').forEach(el => {
+        const states = ['sm-available', 'sm-maintenance', 'sm-ev'];
+        states.forEach(c => el.classList.remove(c));
+        el.classList.add('sm-maintenance');
+        const slotNum = parseInt(el.dataset.slot) + 1;
+        el.textContent = 'A' + slotNum;
+      });
+      toast('All slots set to maintenance', 'info');
+    }
+
+    function saveSlotChanges() {
+      const sel = document.getElementById('lot-select');
+      const floorSel = document.getElementById('floor-select');
+
+      const idx = parseInt(sel?.value);
+      const floorIdx = parseInt(floorSel?.value) || 0;
+
+      const states = [];
+
+      let maintenanceCount = 0;
+      let occupiedCount = 0;
+
+      document.querySelectorAll(
+        '#slot-manager-grid .slot-mgmt-cell'
+      ).forEach(el => {
+
+        const cls =
+          ['sm-available',
+            'sm-maintenance',
+            'sm-ev',
+            'sm-occupied']
+            .find(c => el.classList.contains(c))
+          || 'sm-available';
+
+        states.push(cls);
+
+        if (cls === 'sm-maintenance')
+          maintenanceCount++;
+
+        if (cls === 'sm-occupied')
+          occupiedCount++;
+      });
+
+      const stateKey =
+        `slot_state_${_ownerLotKey()}_${idx}_${floorIdx}`;
+
+      localStorage.setItem(
+        stateKey,
+        JSON.stringify(states)
+      );
+
+      // UPDATE LOT COUNTS
+      const lots = _loadOwnerLots();
+
+      if (lots[idx]) {
+
+        lots[idx].availableSlots =
+          lots[idx].totalSlots
+          - maintenanceCount
+          - occupiedCount;
+
+        _saveOwnerLots(lots);
+      }
+
+      refreshLotsUI();
+      updateOwnerStats();
+
+      toast('Slot status saved!', 'success');
+    }
+
+    async function submitNewLot() {
+      // Grab fields by ID for reliability
+      const modalInputs = document.querySelectorAll('#add-lot-modal [data-field]');
+      const fields = {};
+      modalInputs.forEach(el => { fields[el.dataset.field] = el.value.trim(); });
+
+      const priceBike = document.getElementById('price-bike')?.value;
+      const priceCar = document.getElementById('price-car')?.value;
+      const priceHeavy = document.getElementById('price-heavy')?.value;
+
+      // Validate
+      let valid = true;
+      ['lot-name', 'lot-address', 'lot-city', 'lot-slots'].forEach(key => {
+        const el = document.querySelector(`#add-lot-modal [data-field="${key}"]`);
+        if (!el) return;
+        if (!el.value.trim()) { el.style.borderColor = 'var(--danger)'; valid = false; }
+        else el.style.borderColor = '';
+      });
+      if (!priceBike || !priceCar || !priceHeavy) {
+        toast('Please set pricing for all vehicle types', 'error'); return;
+      }
+      if (!valid) { toast('Please fill all required fields', 'error'); return; }
+
+      const lotLat = parseFloat(document.getElementById('lot-lat')?.value) || null;
+      const lotLng = parseFloat(document.getElementById('lot-lng')?.value) || null;
+
+      if (!lotLat || !lotLng) {
+        toast('Please pin your parking location on the map before submitting.', 'error');
+        return;
+      }
+
+      const lotName = fields['lot-name'] || 'My Parking Lot';
+      const address = fields['lot-address'] || '';
+      const city = fields['lot-city'] || '';
+      const totalSlots = parseInt(fields['lot-slots']) || 50;
+      const amenities = [];
+      document.querySelectorAll('#add-lot-modal [data-amenity]:checked').forEach(cb => amenities.push(cb.dataset.amenity));
+
+      const lots = _loadOwnerLots();
+      const newLot = {
+        id: Date.now(),
+        name: lotName,
+        address,
+        city,
+        latitude: lotLat,
+        longitude: lotLng,
+        totalSlots,
+        availableSlots: totalSlots,
+        floors: ['Ground Floor'],
+        pricing: { bike: priceBike, car: priceCar, heavy: priceHeavy },
+        amenities,
+        status: 'active',
+        addedAt: new Date().toISOString()
+      };
+      try {
+        await api.post('/parking', {
+          name: lotName,
+          address: address,
+          city: city,
+          totalSlots: totalSlots,
+          latitude: lotLat,
+          longitude: lotLng,
+
+          priceBike: priceBike,
+          priceCar: priceCar,
+          priceHeavy: priceHeavy,
+
+          pricePerHour: priceCar,
+
+          hasEVCharging: amenities.includes('ev'),
+          amenities: amenities
+        });
+
+        lots.push({ ...newLot, status: 'pending' });
+        _saveOwnerLots(lots);
+
+        closeModal('add-lot-modal');
+        toast('Lot submitted! Awaiting admin approval before going live.', 'success');
+
+      } catch (err) {
+        console.error(err);
+        toast(err.message || 'Failed to publish parking lot', 'error');
+        return;
+      }
+      document.querySelectorAll('#add-lot-modal input, #add-lot-modal textarea').forEach(el => el.value = '');
+      document.querySelectorAll('#add-lot-modal [data-amenity]').forEach(cb => cb.checked = false);
+      document.querySelectorAll('#add-lot-modal [data-field]').forEach(el => el.style.borderColor = '');
+      // Reset map pin
+      if (lotPickerMarker) { lotPickerMap.removeLayer(lotPickerMarker); lotPickerMarker = null; }
+      document.getElementById('lot-coords-badge').style.display = 'none';
+      document.getElementById('lot-map-status-text').textContent = 'No location pinned yet — search or click on the map';
+
+      refreshLotsUI();
+      refreshLotSelect();
+      updateOwnerStats();
+    }
+
+    function refreshLotsUI() {
+      const lots = _loadOwnerLots();
+      const container = document.getElementById('lots-list');
+      const noMsg = document.getElementById('no-lots-msg');
+      const lotsCount = document.getElementById('lots-count');
+
+      if (!container) return;
+      if (lotsCount) lotsCount.textContent = lots.length;
+
+      if (lots.length === 0) {
+        if (noMsg) noMsg.style.display = '';
+        return;
+      }
+      if (noMsg) noMsg.style.display = 'none';
+
+      // Re-render all lot cards
+      const existingCards = container.querySelectorAll('.lot-card');
+      existingCards.forEach(c => c.remove());
+
+      lots.forEach((lot, idx) => {
+        const card = document.createElement('div');
+        card.className = 'lot-card';
+        card.innerHTML = `
+      <div class="lot-card-header">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem">${lot.name}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:2px">${lot.address}${lot.city ? ', ' + lot.city : ''}</div>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="badge badge-green">Active</span>
+          <button class="btn btn-ghost btn-sm" onclick="removeLot(${idx})" title="Remove lot" style="color:var(--danger)">✕</button>
+        </div>
+      </div>
+      <div class="lot-card-body">
+        <div class="lot-stat"><div class="lot-stat-label">Total Slots</div><div class="lot-stat-val">${lot.totalSlots}</div></div>
+        <div class="lot-stat"><div class="lot-stat-label">Available</div><div class="lot-stat-val" style="color:var(--success)">${lot.availableSlots}</div></div>
+        <div class="lot-stat"><div class="lot-stat-label">Bike Rate</div><div class="lot-stat-val">₹${lot.pricing?.bike || '—'}/hr</div></div>
+        <div class="lot-stat"><div class="lot-stat-label">Car Rate</div><div class="lot-stat-val">₹${lot.pricing?.car || '—'}/hr</div></div>
+        <div class="lot-stat"><div class="lot-stat-label">Heavy Rate</div><div class="lot-stat-val">₹${lot.pricing?.heavy || '—'}/hr </div>
+</div>
+      </div>
+      <div style="padding:.5rem 1.5rem;background:var(--bg3);border-top:1px solid var(--border)">
+        <div class="occupancy-bar"><div class="occupancy-fill" style="width:${Math.round((1 - lot.availableSlots / lot.totalSlots) * 100)}%"></div></div>
+      </div>
+      <div class="lot-card-footer">
+        <button class="btn btn-outline btn-sm" onclick="switchTab('slots',null);setTimeout(()=>{const s=document.getElementById('lot-select');if(s){s.value='${idx}';onLotSelectChange();}},100)">Manage Slots</button>
+      </div>`;
+        container.appendChild(card);
+      });
+
+      // Update lot status table on overview
+      updateLotStatusTable(lots);
+    }
+
+    function updateLotStatusTable(lots) {
+      const tbody = document.getElementById('lot-status-tbody');
+      if (!tbody) return;
+      if (lots.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No lots added yet. <button class="btn btn-primary btn-sm" onclick="openModal(\'add-lot-modal\')" style="margin-left:.5rem">Add your first lot →</button></td></tr>';
+        return;
+      }
+      tbody.innerHTML = lots.map(lot => `
+    <tr>
+      <td><div style="font-weight:600;font-size:.875rem">${lot.name}</div><div style="font-size:.75rem;color:var(--muted)">${lot.city || ''}</div></td>
+      <td>
+        <div style="font-size:.85rem">${lot.availableSlots}/${lot.totalSlots}</div>
+        <div class="occupancy-bar" style="width:80px;margin-top:4px"><div class="occupancy-fill" style="width:${Math.round((1 - lot.availableSlots / lot.totalSlots) * 100)}%"></div></div>
+      </td>
+      <td style="color:var(--muted);font-size:.85rem">0</td>
+      <td style="color:var(--amber);font-size:.85rem">₹0</td>
+      <td><span class="badge badge-green">Active</span></td>
+    </tr>`).join('');
+    }
+
+    function removeLot(idx) {
+      const lots = _loadOwnerLots();
+      lots.splice(idx, 1);
+      _saveOwnerLots(lots);
+      refreshLotsUI();
+      refreshLotSelect();
+      updateOwnerStats();
+      toast('Lot removed', 'info');
+    }
+
+    function updateOwnerStats() {
+      const lots = _loadOwnerLots();
+      const totalSlots = lots.reduce((s, l) => s + (parseInt(l.totalSlots) || 0), 0);
+      const el = document.getElementById('owner-total-slots');
+      if (el) el.textContent = totalSlots;
+      const sub = document.getElementById('owner-free-slots');
+      if (sub) sub.textContent = lots.length ? lots.reduce((s, l) => s + (parseInt(l.availableSlots) || 0), 0) + ' slots available' : 'add lots to see availability';
+      buildCharts();
+    }
+
+    function renderPayoutHistory() {
+      const bookings = _loadOwnerBookings();
+      const list = document.getElementById('payout-history-list');
+      const emptyState = document.getElementById('payout-empty-state');
+      if (!list) return;
+
+      if (bookings.length === 0) {
+        list.innerHTML = '';
+        if (emptyState) emptyState.style.display = '';
+        return;
+      }
+
+      if (emptyState) emptyState.style.display = 'none';
+
+      // Group bookings by month
+      const monthMap = {};
+      bookings.forEach(b => {
+        const d = new Date(b.date);
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const label = d.toLocaleString('default', { month: 'long' }) + ' ' + d.getFullYear();
+        if (!monthMap[key]) monthMap[key] = { label, total: 0 };
+        monthMap[key].total += (b.amount || 0);
+      });
+
+      const sortedKeys = Object.keys(monthMap).sort().reverse();
+      const now = new Date();
+      const thisMonthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+      list.innerHTML = sortedKeys.map(key => {
+        const { label, total } = monthMap[key];
+        const net = (total * 0.85).toFixed(2);
+        const isPending = key >= thisMonthKey;
+        return `<div class="payout-row">
+      <div>
+        <div style="font-weight:500;font-size:.9rem">${label} Payout</div>
+        <div style="font-size:.75rem;color:var(--muted)">Platform fee (15%) deducted</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;${isPending ? 'color:var(--amber)' : ''}">₹${net}</div>
+        <div style="font-size:.72rem;color:${isPending ? 'var(--muted)' : 'var(--success)'}">${isPending ? 'Pending' : 'Paid'}</div>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auth guard — only owners/admins allowed
+      if (typeof auth !== 'undefined') {
+        if (!auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+        if (!auth.isOwner()) { window.location.href = 'dashboard.html'; return; }
+      }
+      buildCharts();
+      refreshLotSelect();
+      refreshLotsUI();
+      updateOwnerStats();
+      renderPayoutHistory();
+      const user = auth.getUser();
+      if (user) {
+        const fullName = (user.firstName || '') + ' ' + (user.lastName || '');
+        const initials = ((user.firstName || '')[0] + '' + (user.lastName || '')[0]).toUpperCase();
+        const sidebarName = document.getElementById('sidebar-name');
+        const sidebarAvatar = document.getElementById('sidebar-avatar');
+        const sidebarRole = document.getElementById('sidebar-role');
+        const roleChip = document.getElementById('role-badge');
+        const subtitle = document.getElementById('owner-subtitle');
+        if (sidebarName) sidebarName.textContent = fullName.trim();
+        if (sidebarAvatar) sidebarAvatar.textContent = initials;
+        if (sidebarRole) sidebarRole.textContent = 'Parking Owner';
+        if (roleChip) { roleChip.textContent = 'Owner'; roleChip.className = 'role-chip role-chip-owner'; }
+        if (subtitle) subtitle.textContent = user.firstName ? user.firstName + "'s Dashboard" : 'Owner Dashboard';
+      }
+      // Fix lots-count badge
+      const lotsCount = document.getElementById('lots-count');
+      if (lotsCount) lotsCount.textContent = _loadOwnerLots().length;
+    });
+  </script>
+</body>
+
+</html>

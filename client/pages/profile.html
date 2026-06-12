@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — ParkIQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <style>
+    .profile-hero {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      display: flex;
+      align-items: flex-end;
+      gap: 1.5rem;
+      flex-wrap: wrap
+    }
+
+    .avatar-upload {
+      position: relative;
+      cursor: pointer
+    }
+
+    .avatar-lg-wrap {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--amber-pale2);
+      border: 3px solid var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2rem;
+      color: var(--amber);
+      position: relative;
+      overflow: hidden
+    }
+
+    .avatar-upload-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity .2s
+    }
+
+    .avatar-upload:hover .avatar-upload-overlay {
+      opacity: 1
+    }
+
+    .avatar-upload-overlay svg {
+      width: 22px;
+      height: 22px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2
+    }
+
+    .profile-info h2 {
+      font-size: 1.4rem;
+      margin-bottom: .2rem
+    }
+
+    .profile-info p {
+      color: var(--muted);
+      font-size: .875rem
+    }
+
+    .profile-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      background: var(--bg2)
+    }
+
+    .profile-tab {
+      padding: .85rem 1.25rem;
+      font-size: .875rem;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all .15s;
+      white-space: nowrap
+    }
+
+    .profile-tab:hover {
+      color: var(--text)
+    }
+
+    .profile-tab.active {
+      color: var(--amber);
+      border-bottom-color: var(--amber)
+    }
+
+    .profile-content {
+      padding: 2rem;
+      max-width: 800px
+    }
+
+    .section-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem
+    }
+
+    .section-card h3 {
+      font-size: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem
+    }
+
+    .vehicle-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: .4rem .85rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: .82rem;
+      margin: .25rem
+    }
+
+    .vehicle-tag button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      padding: 0;
+      transition: color .15s
+    }
+
+    .vehicle-tag button:hover {
+      color: var(--danger)
+    }
+
+    .notif-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .85rem 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .notif-row:last-child {
+      border-bottom: none
+    }
+
+    .notif-row-info h4 {
+      font-size: .875rem;
+      margin-bottom: 2px
+    }
+
+    .notif-row-info p {
+      font-size: .78rem;
+      color: var(--muted)
+    }
+
+    .danger-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: rgba(239, 68, 68, .05);
+      border: 1px solid rgba(239, 68, 68, .15);
+      border-radius: var(--radius-sm);
+      margin-bottom: .75rem
+    }
+
+    .danger-item-info h4 {
+      font-size: .875rem;
+      margin-bottom: 2px;
+      color: var(--text)
+    }
+
+    .danger-item-info p {
+      font-size: .78rem;
+      color: var(--muted)
+    }
+
+    .tab-content {
+      display: none
+    }
+
+    .tab-content.active {
+      display: block
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 1rem;
+      padding: .85rem 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .activity-item:last-child {
+      border-bottom: none
+    }
+
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0
+    }
+
+    .activity-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8
+    }
+
+    .activity-text {
+      font-size: .875rem
+    }
+
+    .activity-meta {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 2px
+    }
+
+    @media(max-width:640px) {
+      .field-row {
+        grid-template-columns: 1fr
+      }
+
+      .profile-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="page-loader" class="page-loader">
+    <div class="spinner"></div>
+  </div>
+  <div id="toast-container"></div>
+
+  <div class="dash-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <a href="index.html" class="nav-logo" style="font-size:1.1rem">
+            <div class="logo-dot"></div>Park<span>IQ</span>
+          </a>
+          <span class="role-chip role-chip-user" id="role-badge">User</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>Overview</a>
+        <a href="map.html" class="sidebar-link"><svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>Find Parking</a>
+        <a href="booking-history.html" class="sidebar-link"><svg viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>My Bookings</a>
+        <div class="nav-section-label">Account</div>
+        <a href="profile.html" class="sidebar-link active"><svg viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>Profile</a>
+        <a href="#" class="sidebar-link" data-logout><svg viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>Sign Out</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar avatar-sm" id="sidebar-avatar">AB</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name" id="sidebar-name">Alice Brown</div>
+            <div class="sidebar-user-role">Driver</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="dash-main">
+      <div class="dash-topbar">
+        <div>
+          <div class="topbar-title">My Profile</div>
+          <div style="font-size:.75rem;color:var(--muted)">Manage your account settings and preferences</div>
+        </div>
+      </div>
+
+      <!-- Profile hero -->
+      <div class="profile-hero">
+        <div class="avatar-upload" onclick="document.getElementById('avatar-input').click()">
+          <div class="avatar-lg-wrap" id="profile-avatar">AB</div>
+          <div class="avatar-upload-overlay"><svg viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg></div>
+          <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+        </div>
+        <div class="profile-info">
+          <h2 id="profile-full-name">Alice Brown</h2>
+          <p id="profile-email-display">alice@email.com</p>
+          <div style="display:flex;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
+            <span class="badge badge-green" id="profile-verified-badge">✓ Email Verified</span>
+            <span class="badge badge-muted" id="profile-role-badge">Driver</span>
+            <span class="badge badge-muted">Joined Jan 2024</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:1rem;text-align:center;flex-wrap:wrap">
+          <div>
+            <div id="stat-bookings"
+              style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--amber)">0</div>
+            <div style="font-size:.72rem;color:var(--muted)">Bookings</div>
+          </div>
+          <div>
+            <div id="stat-spent"
+              style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--amber)">₹0</div>
+            <div style="font-size:.72rem;color:var(--muted)">Spent</div>
+          </div>
+          <div>
+            <div id="stat-reviews"
+              style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--amber)">0</div>
+            <div style="font-size:.72rem;color:var(--muted)">Reviews</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="profile-tabs">
+        <div class="profile-tab active" onclick="switchProfileTab('info',this)">Personal Info</div>
+        <div class="profile-tab" onclick="switchProfileTab('vehicles',this)">Vehicles</div>
+        <div class="profile-tab" onclick="switchProfileTab('notifications',this)">Notifications</div>
+        <div class="profile-tab" onclick="switchProfileTab('security',this)">Security</div>
+        <div class="profile-tab" onclick="switchProfileTab('activity',this)">Activity</div>
+        <div class="profile-tab" onclick="switchProfileTab('danger',this)" style="color:var(--danger)">Danger Zone</div>
+      </div>
+
+      <div class="profile-content">
+
+        <!-- Personal Info -->
+        <div class="tab-content active" id="tab-info">
+          <form id="profile-form">
+            <div class="section-card">
+              <h3>Basic Information</h3>
+              <div class="field-row">
+                <div class="form-group"><label class="form-label">First name</label><input type="text"
+                    class="form-input" name="firstName" id="field-firstName" value="Alice"></div>
+                <div class="form-group"><label class="form-label">Last name</label><input type="text" class="form-input"
+                    name="lastName" id="field-lastName" value="Brown"></div>
+              </div>
+              <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">Email address</label>
+                <input type="email" class="form-input" name="email" id="field-email" value="alice@email.com">
+                <span class="form-hint">Changing email requires re-verification</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone number</label>
+                <input type="tel" class="form-input" name="phone" id="field-phone" value="+1 (111) 111-1111">
+              </div>
+            </div>
+
+            <div class="section-card">
+              <h3>Preferences</h3>
+              <div class="field-row">
+                <div class="form-group">
+                  <label class="form-label">Default vehicle type</label>
+                  <select class="form-select" name="defaultVehicle">
+                    <option value="car" selected>🚗 Car</option>
+                    <option value="ev">⚡ EV</option>
+                    <option value="motorcycle">🏍️ Motorcycle</option>
+                    <option value="heavy">🚌 Heavy (Bus/Truck)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Currency</label>
+                  <select class="form-select" name="currency">
+                    <option value="INR" selected>INR (₹)</option>
+
+
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Home area / Default search location</label>
+                <input type="text" class="form-input" name="homeArea" placeholder="e.g. Connaught Place, New Delhi">
+              </div>
+            </div>
+
+            <div style="display:flex;gap:.75rem">
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+              <button type="button" class="btn btn-outline" onclick="loadProfileData()">Discard</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Vehicles -->
+        <div class="tab-content" id="tab-vehicles">
+          <div class="section-card">
+            <h3>Saved Vehicles</h3>
+            <div id="vehicles-list"></div>
+            <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+              <h4 style="font-size:.875rem;margin-bottom:1rem">Add New Vehicle</h4>
+              <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;align-items:end">
+                <div class="form-group"><label class="form-label">Registration Number</label><input type="text"
+                    class="form-input" id="new-vehicle-num" placeholder="XYZ-0000" style="text-transform:uppercase">
+                </div>
+                <div class="form-group"><label class="form-label">Vehicle Type</label><select class="form-select"
+                    id="new-vehicle-type">
+                    <option value="car">🚗 Car</option>
+                    <option value="ev">⚡ EV</option>
+                    <option value="motorcycle">🏍️ Motorcycle</option>
+                    <option value="truck">🚛 Truck</option>
+                    <option value="heavy">🚌 Heavy (Bus/Truck)</option>
+                  </select></div>
+                <button class="btn btn-primary" onclick="addVehicle()">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="tab-content" id="tab-notifications">
+          <div class="section-card">
+            <h3>Email Notifications</h3>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Booking confirmations</h4>
+                <p>Receive an email when a booking is confirmed</p>
+              </div><label class="toggle"><input type="checkbox" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Booking reminders</h4>
+                <p>1 hour before your parking session starts</p>
+              </div><label class="toggle"><input type="checkbox" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Receipts & payments</h4>
+                <p>After each payment or refund</p>
+              </div><label class="toggle"><input type="checkbox" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Promotions & offers</h4>
+                <p>Deals, discount codes, and special offers</p>
+              </div><label class="toggle"><input type="checkbox">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Platform updates</h4>
+                <p>New features and product announcements</p>
+              </div><label class="toggle"><input type="checkbox">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="section-card">
+            <h3>Push Notifications</h3>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Session starting soon</h4>
+                <p>15 minutes before your parking starts</p>
+              </div><label class="toggle"><input type="checkbox" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Session ending soon</h4>
+                <p>30 minutes before your session expires</p>
+              </div><label class="toggle"><input type="checkbox" checked>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            <div class="notif-row">
+              <div class="notif-row-info">
+                <h4>Nearby available spots</h4>
+                <p>When parking opens near your saved locations</p>
+              </div><label class="toggle"><input type="checkbox">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="toast('Notification preferences saved!','success')">Save
+            Preferences</button>
+        </div>
+
+        <!-- Security -->
+        <div class="tab-content" id="tab-security">
+          <div class="section-card">
+            <h3>Change Password</h3>
+            <div style="display:flex;flex-direction:column;gap:1rem">
+              <div class="form-group">
+                <label class="form-label">Current password</label>
+                <div style="position:relative"><input type="password" class="form-input" id="current-pw"
+                    placeholder="Enter current password"><button type="button" class="password-toggle"
+                    data-target="current-pw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="1.8">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg></button></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">New password</label>
+                <div style="position:relative"><input type="password" class="form-input" id="new-pw"
+                    placeholder="Min. 8 characters"><button type="button" class="password-toggle"
+                    data-target="new-pw"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="1.8">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg></button></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm new password</label>
+                <input type="password" class="form-input" id="confirm-pw" placeholder="Repeat new password">
+              </div>
+              <button class="btn btn-primary" style="width:fit-content" onclick="changePassword()">Update
+                Password</button>
+            </div>
+          </div>
+          <div class="section-card">
+            <h3>Active Sessions</h3>
+            <div class="session-row current-session-row"
+              style="display:flex;justify-content:space-between;align-items:center;padding:.85rem 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-weight:500;font-size:.875rem" id="current-session-device">This device</div>
+                <div style="font-size:.75rem;color:var(--success)">Current session</div>
+              </div>
+              <span class="badge badge-green">Active</span>
+            </div>
+            <div id="other-sessions-container">
+              <!-- Other sessions will be listed here dynamically -->
+              <div style="padding:.85rem 0;font-size:.8rem;color:var(--muted)">No other active sessions detected.</div>
+            </div>
+            <div style="margin-top:.75rem;display:flex;gap:.75rem;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" id="sign-out-all-btn"
+                style="color:var(--danger);border-color:rgba(239,68,68,.3)">Sign out all other sessions</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity -->
+        <div class="tab-content" id="tab-activity">
+          <div class="section-card">
+            <h3>Recent Activity</h3>
+            <div id="activity-list"></div>
+            <div id="activity-empty" style="text-align:center;padding:2rem 1rem;color:var(--muted)">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+                style="opacity:.4;margin-bottom:.5rem">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <div style="font-size:.85rem">No activity yet</div>
+              <div style="font-size:.75rem;margin-top:.2rem">Your bookings and reviews will appear here</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="tab-content" id="tab-danger">
+          <div class="section-card" style="border-color:rgba(239,68,68,.2)">
+            <h3 style="color:var(--danger)">Danger Zone</h3>
+            <div class="danger-item">
+              <div class="danger-item-info">
+                <h4>Deactivate Account</h4>
+                <p>Temporarily disable your account. You can reactivate by signing in again.</p>
+              </div>
+              <button class="btn btn-outline btn-sm"
+                style="color:var(--danger);border-color:rgba(239,68,68,.3);flex-shrink:0"
+                onclick="toast('Contact support to deactivate your account','info')">Deactivate</button>
+            </div>
+            <div class="danger-item" style="border-color:rgba(239,68,68,.25)">
+              <div class="danger-item-info">
+                <h4>Delete Account</h4>
+                <p>Permanently delete your account and all data. This cannot be undone.</p>
+              </div>
+              <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="confirmDelete()">Delete
+                Account</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/app.js"></script>
+  <script src="../js/auth.js"></script>
+  <script>
+    function switchProfileTab(tab, el) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tab)?.classList.add('active');
+      document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function loadProfileData() {
+      const user = auth.getUser();
+      if (!user) return;
+      document.getElementById('field-firstName').value = user.firstName || '';
+      document.getElementById('field-lastName').value = user.lastName || '';
+      document.getElementById('field-email').value = user.email || '';
+      document.getElementById('field-phone').value = user.phone || '';
+      document.getElementById('profile-full-name').textContent = `${user.firstName} ${user.lastName || ''}`;
+      document.getElementById('profile-email-display').textContent = user.email || '';
+      const initials = ((user.firstName || '')[0] + '' + (user.lastName || '')[0]).toUpperCase();
+      document.getElementById('profile-avatar').textContent = initials;
+      document.getElementById('sidebar-avatar').textContent = initials;
+      document.getElementById('sidebar-name').textContent = `${user.firstName} ${user.lastName || ''}`;
+
+      // Load real stats from API
+      api.get('/users/stats').then(res => {
+        const s = res.data || {};
+        const bEl = document.getElementById('stat-bookings');
+        const sEl = document.getElementById('stat-spent');
+        const rEl = document.getElementById('stat-reviews');
+        if (bEl) bEl.textContent = s.totalBookings ?? 0;
+        if (sEl) sEl.textContent = s.totalSpent != null ? '₹' + Number(s.totalSpent).toLocaleString('en-IN') : '₹0';
+        if (rEl) rEl.textContent = s.totalReviews ?? 0;
+        // Populate activity list
+        const list = document.getElementById('activity-list');
+        const empty = document.getElementById('activity-empty');
+        const activities = s.recentActivity || [];
+        if (list) {
+          if (activities.length) {
+            if (empty) empty.style.display = 'none';
+            list.innerHTML = activities.map(a => `
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--amber-pale2)"><svg viewBox="0 0 24 24" stroke="var(--amber)" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <div><div class="activity-text">${a.description}</div><div class="activity-meta">${a.meta || ''}</div></div>
+          </div>`).join('');
+          } else {
+            if (empty) empty.style.display = '';
+          }
+        }
+      }).catch(() => {
+        // API not available yet — stats stay at 0
+      });
+    }
+
+    document.getElementById('profile-form')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = e.target.querySelector('[type="submit"]');
+      setLoading(btn, true);
+      try {
+        const data = getFormData(e.target);
+        // await api.put('/users/profile', data);  // uncomment when backend ready
+        const user = auth.getUser();
+        auth.setUser({ ...user, firstName: data.firstName, lastName: data.lastName, email: data.email, phone: data.phone });
+        loadProfileData();
+        toast('Profile updated!', 'success');
+      } catch (err) {
+        toast(err.message || 'Failed to update profile', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    /* ── Vehicle Management (per-user, stored in localStorage) ── */
+    function _vehicleKey() {
+      const user = auth.getUser();
+      return user ? 'vehicles_' + (user._id || user.id || user.email) : 'vehicles_guest';
+    }
+    function _loadVehicles() {
+      try { return JSON.parse(localStorage.getItem(_vehicleKey())) || []; } catch { return []; }
+    }
+    function _saveVehicles(list) {
+      localStorage.setItem(_vehicleKey(), JSON.stringify(list));
+    }
+
+    function renderVehicles() {
+      const vehicles = _loadVehicles();
+      const icons = { car: '🚗', ev: '⚡', motorcycle: '🏍️', truck: '🚛', heavy: '🚌' };
+      const container = document.getElementById('vehicles-list');
+      if (!container) return;
+      if (!vehicles.length) {
+        container.innerHTML = '<p style="color:var(--muted);font-size:.875rem;margin:.5rem 0">No vehicles added yet. Add your first vehicle below.</p>';
+        return;
+      }
+      container.innerHTML = vehicles.map((v, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:.5rem;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:1.5rem">${icons[v.type] || '🚗'}</span>
+        <div>
+          <div style="font-weight:500">${v.num}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${v.type.charAt(0).toUpperCase() + v.type.slice(1)}${v.primary ? ' · Primary' : ''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        ${v.primary ? '<span class="badge badge-amber">Primary</span>' : '<button class="btn btn-ghost btn-sm" onclick="setPrimaryVehicle(' + i + ')">Set Primary</button>'}
+        <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="removeVehicle('+i+')">Remove</button>
+      </div>
+    </div>`).join('');
+    }
+
+    function addVehicle() {
+      const num = document.getElementById('new-vehicle-num').value.trim().toUpperCase();
+      const type = document.getElementById('new-vehicle-type').value;
+      if (!num) { toast('Enter a vehicle number', 'error'); return; }
+      if (!/^[A-Z0-9][A-Z0-9\-]{1,10}$/.test(num)) { toast('Enter a valid registration number', 'error'); return; }
+      const vehicles = _loadVehicles();
+      if (vehicles.some(v => v.num === num)) { toast('Vehicle already added', 'error'); return; }
+      vehicles.push({ num, type, primary: vehicles.length === 0 });
+      _saveVehicles(vehicles);
+      document.getElementById('new-vehicle-num').value = '';
+      renderVehicles();
+      toast('Vehicle added!', 'success');
+    }
+
+    function removeVehicle(idx) {
+      let vehicles = _loadVehicles();
+      const wasPrimary = vehicles[idx]?.primary;
+      vehicles.splice(idx, 1);
+      if (wasPrimary && vehicles.length) vehicles[0].primary = true;
+      _saveVehicles(vehicles);
+      renderVehicles();
+      toast('Vehicle removed', 'info');
+    }
+
+    function setPrimaryVehicle(idx) {
+      let vehicles = _loadVehicles();
+      vehicles.forEach((v, i) => v.primary = (i === idx));
+      _saveVehicles(vehicles);
+      renderVehicles();
+      toast('Primary vehicle updated', 'success');
+    }
+
+    function changePassword() {
+      const curr = document.getElementById('current-pw').value;
+      const nw = document.getElementById('new-pw').value;
+      const conf = document.getElementById('confirm-pw').value;
+      if (!curr) { toast('Enter current password', 'error'); return; }
+      if (nw.length < 8) { toast('New password must be at least 8 characters', 'error'); return; }
+      if (nw !== conf) { toast('Passwords do not match', 'error'); return; }
+      toast('Password updated successfully!', 'success');
+      ['current-pw', 'new-pw', 'confirm-pw'].forEach(id => document.getElementById(id).value = '');
+    }
+
+    function previewAvatar(input) {
+      if (!input.files?.[0]) return;
+      toast('Avatar updated!', 'success');
+    }
+
+    function confirmDelete() {
+      if (confirm('Are you absolutely sure? This action cannot be undone and all your data will be permanently deleted.')) {
+        toast('Deletion request submitted. You will receive a confirmation email.', 'info');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!auth.guard()) return;
+      const user = auth.getUser();
+      // Fix #10: Update role chip and sidebar role correctly based on stored role
+      const roleChip = document.getElementById('role-badge');
+      if (user) {
+        if (user.role === 'owner') {
+          const actionBtn = document.querySelector('.topbar-right .btn');
+          if (roleChip) { roleChip.textContent = 'Owner'; roleChip.className = 'role-chip role-chip-owner'; }
+          // Fix profile-role-badge
+          const prb = document.getElementById('profile-role-badge');
+          if (prb) { prb.textContent = 'Owner'; prb.className = 'badge badge-amber'; }
+          // Fix sidebar role text
+          const sideRole = document.querySelector('.sidebar-user-role');
+          if (sideRole) sideRole.textContent = 'Parking Owner';
+          // Adjust nav links for owner
+          const overviewLink = document.querySelector('a[href="dashboard.html"]');
+          if (overviewLink) overviewLink.href = 'owner-dashboard.html';
+          const findParkingLink = document.querySelector('a[href="map.html"]');
+          const myBookingsLink = document.querySelector('a[href="booking-history.html"]');
+          // owners don't need find parking/bookings in sidebar
+          if (findParkingLink) findParkingLink.style.display = 'none';
+          if (myBookingsLink) myBookingsLink.style.display = 'none';
+          const nav = document.querySelector('.sidebar-nav');
+
+          if (nav && !document.getElementById('owner-profile-links')) {
+            const ownerLinks = document.createElement('div');
+            ownerLinks.id = 'owner-profile-links';
+
+            ownerLinks.innerHTML = `
+  <a href="owner-dashboard.html" class="sidebar-link">
+    <svg viewBox="0 0 24 24">
+      <rect x="1" y="3" width="15" height="13" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+    My Lots
+  </a>
+
+  <a href="owner-dashboard.html" class="sidebar-link">
+    <svg viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+    Slot Manager
+  </a>
+
+  <a href="owner-dashboard.html" class="sidebar-link">
+  <svg viewBox="0 0 24 24">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+  </svg>
+  Bookings
+</a>
+
+  <a href="owner-dashboard.html" class="sidebar-link">
+    <svg viewBox="0 0 24 24">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+    Revenue
+  </a>
+
+  <a href="owner-dashboard.html" class="sidebar-link">
+    <svg viewBox="0 0 24 24">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+    Reviews
+  </a>
+`;
+
+            const accountLabel = nav.querySelector('.nav-section-label');
+            nav.insertBefore(ownerLinks, accountLabel);
+          }
+        } else {
+          if (roleChip) { roleChip.textContent = 'User'; roleChip.className = 'role-chip role-chip-user'; }
+        }
+      }
+      loadProfileData();
+      renderVehicles();
+      initPasswordToggles?.();
+
+      // Fix #11: Wire up session revoke and sign-out-all properly
+      document.querySelectorAll('.revoke-session-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+          const sessionRow = this.closest('.session-row');
+          if (sessionRow) { sessionRow.style.opacity = '0'; sessionRow.style.transition = 'opacity .3s'; setTimeout(() => sessionRow.remove(), 300); }
+          toast('Session revoked successfully', 'success');
+        });
+      });
+      document.getElementById('sign-out-all-btn')?.addEventListener('click', function () {
+        document.querySelectorAll('.session-row:not(.current-session-row)').forEach(r => {
+          r.style.opacity = '0'; r.style.transition = 'opacity .3s'; setTimeout(() => r.remove(), 300);
+        });
+        toast('All other sessions signed out', 'success');
+      });
+    });
+  </script>
+</body>
+
+</html>

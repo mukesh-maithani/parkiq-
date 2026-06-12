@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Bookings — ParkIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<style>
+.booking-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1rem;transition:border-color .2s}
+.booking-card:hover{border-color:rgba(255,255,255,.12)}
+.booking-card-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+.booking-card-body{padding:1.25rem 1.5rem}
+.booking-card-footer{padding:.75rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:var(--bg3)}
+.bk-code{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--amber)}
+.bk-parking{font-weight:600;font-size:1rem;margin-bottom:.2rem}
+.bk-address{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.bk-details-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.bk-detail{font-size:.78rem}
+.bk-detail-label{color:var(--muted);margin-bottom:2px}
+.bk-detail-val{font-weight:500}
+.status-active{color:var(--success)}
+.status-confirmed{color:#3B82F6}
+.status-completed{color:var(--muted)}
+.status-cancelled{color:var(--danger)}
+.status-pending{color:var(--warning)}
+.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;margin-bottom:1.5rem;width:fit-content}
+.tab{padding:.45rem 1.1rem;border-radius:calc(var(--radius-sm) - 2px);font-size:.85rem;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--bg3);color:var(--text)}
+.tab:hover:not(.active){color:var(--text)}
+.search-filter-row{display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2}
+.search-wrap input{padding-left:34px}
+@media(max-width:700px){.bk-details-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="page-loader" class="page-loader"><div class="spinner"></div></div>
+<div id="toast-container"></div>
+
+<div class="dash-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <a href="index.html" class="nav-logo" style="font-size:1.1rem"><div class="logo-dot"></div>Park<span>IQ</span></a>
+        <span class="role-chip role-chip-user" id="role-badge">User</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="sidebar-link"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Overview</a>
+      <a href="map.html" class="sidebar-link"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Find Parking</a>
+      <a href="booking-history.html" class="sidebar-link active"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>My Bookings</a>
+      <div class="nav-section-label">Account</div>
+      <a href="profile.html" class="sidebar-link"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a>
+      <a href="#" class="sidebar-link" data-logout><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar avatar-sm" id="sidebar-avatar">AB</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="sidebar-name">Loading…</div>
+          <div class="sidebar-user-role">Driver</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <div class="topbar-title">My Bookings</div>
+        <div style="font-size:.75rem;color:var(--muted)">View and manage all your parking reservations</div>
+      </div>
+      <div class="topbar-right">
+        <a href="map.html" class="btn btn-primary btn-sm">+ New Booking</a>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem">
+        <div class="stat-card"><div class="stat-card-label">Total</div><div class="stat-card-value" id="stat-total">0</div></div>
+        <div class="stat-card"><div class="stat-card-label">Active</div><div class="stat-card-value" style="color:var(--success)" id="stat-active">0</div></div>
+        <div class="stat-card"><div class="stat-card-label">Completed</div><div class="stat-card-value" id="stat-completed">0</div></div>
+        <div class="stat-card"><div class="stat-card-label">Total spent</div><div class="stat-card-value" id="stat-spent">₹0</div></div>
+      </div>
+
+      <!-- Filters -->
+      <div class="search-filter-row">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" class="form-input" id="booking-search" placeholder="Search bookings…">
+        </div>
+        <select class="form-select" id="booking-sort" style="width:auto">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="amount">Highest amount</option>
+        </select>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" data-tab="all" onclick="filterTab('all',this)" id="tab-label-all">All (0)</div>
+        <div class="tab" data-tab="active" onclick="filterTab('active',this)" id="tab-label-active">Active (0)</div>
+        <div class="tab" data-tab="confirmed" onclick="filterTab('confirmed',this)" id="tab-label-confirmed">Upcoming (0)</div>
+        <div class="tab" data-tab="completed" onclick="filterTab('completed',this)" id="tab-label-completed">Completed (0)</div>
+        <div class="tab" data-tab="cancelled" onclick="filterTab('cancelled',this)" id="tab-label-cancelled">Cancelled (0)</div>
+      </div>
+
+      <!-- Booking list -->
+      <div id="bookings-list"></div>
+    </div>
+  </main>
+</div>
+
+<!-- Cancel modal -->
+<div class="modal-overlay" id="cancel-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cancel Booking</div>
+      <button class="modal-close" data-modal-close="cancel-modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1.25rem">Are you sure you want to cancel this booking? A full refund will be issued if cancelled more than 1 hour before start time.</p>
+    <div class="form-group">
+      <label class="form-label">Reason (optional)</label>
+      <select class="form-select" id="cancel-reason">
+        <option value="">Select a reason</option>
+        <option value="change_plans">Change of plans</option>
+        <option value="wrong_location">Chose wrong location</option>
+        <option value="found_alternative">Found a cheaper option</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-modal-close="cancel-modal">Keep Booking</button>
+      <button class="btn btn-danger" onclick="cancelBooking()">Cancel Booking</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+const bookings = [
+  // No bookings yet — real bookings from API will appear here
+];
+
+let currentTab = 'all';
+let currentSearch = '';
+
+const statusBadge = s => {
+  const map = {active:'badge-amber',confirmed:'badge-green',completed:'badge-muted',cancelled:'badge-red',pending:'badge-muted'};
+  return `<span class="badge ${map[s]||'badge-muted'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+};
+
+function renderBookings(){
+  let list = bookings.filter(b => {
+    if(currentTab !== 'all' && b.status !== currentTab) return false;
+    if(currentSearch){
+      const q = currentSearch.toLowerCase();
+      return b.parking.toLowerCase().includes(q) || b.code.toLowerCase().includes(q) || b.vehicle.toLowerCase().includes(q);
+    }
+    return true;
+  });
+  const sort = document.getElementById('booking-sort').value;
+  if(sort==='oldest')  list.sort((a,b) => new Date(a.start)-new Date(b.start));
+  else if(sort==='amount') list.sort((a,b) => b.amount-a.amount);
+  else list.sort((a,b) => new Date(b.start)-new Date(a.start));
+
+  const container = document.getElementById('bookings-list');
+  if(!list.length){
+    container.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>No bookings found</h3><p>Try adjusting your filters or search query.</p></div>`;
+    return;
+  }
+  container.innerHTML = list.map(b=>`
+    <div class="booking-card">
+      <div class="booking-card-header">
+        <div>
+          <div class="bk-code">${b.code}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${new Date(b.start).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          ${statusBadge(b.status)}
+          <div style="font-family:'Syne',sans-serif;font-weight:800;color:var(--amber)">$${b.amount.toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="booking-card-body">
+        <div class="bk-parking">${b.parking}</div>
+        <div class="bk-address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${b.address}</div>
+        <div class="bk-details-grid" style="margin-top:1rem">
+          <div class="bk-detail"><div class="bk-detail-label">Check in</div><div class="bk-detail-val">${new Date(b.start).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div></div>
+          <div class="bk-detail"><div class="bk-detail-label">Check out</div><div class="bk-detail-val">${new Date(b.end).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div></div>
+          <div class="bk-detail"><div class="bk-detail-label">Duration</div><div class="bk-detail-val">${b.duration}</div></div>
+          <div class="bk-detail"><div class="bk-detail-label">Vehicle</div><div class="bk-detail-val">${b.vehicle}</div></div>
+        </div>
+      </div>
+      <div class="booking-card-footer">
+        <div style="display:flex;gap:.5rem">
+          ${b.status==='active'?`<div style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--success)"><span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;animation:pulse 1.5s ease infinite"></span>Session in progress</div>`:''}
+          ${b.status==='confirmed'?`<div style="font-size:.8rem;color:var(--muted)">Starts ${new Date(b.start).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}
+          ${b.status==='completed'?`<div style="font-size:.8rem;color:var(--muted)">Completed · Paid ✓</div>`:''}
+        </div>
+        <div style="display:flex;gap:.5rem">
+          ${b.status==='active'?`<button class="btn btn-outline btn-sm" onclick="toast('QR code displayed','info')">Show QR</button>`:''}
+          ${b.status==='completed'?`<a href="parking-details.html?id=1" class="btn btn-outline btn-sm">Book again</a><button class="btn btn-ghost btn-sm" onclick="toast('Review submitted!','success')">Rate ★</button>`:''}
+          ${['confirmed','pending'].includes(b.status)?`<button class="btn btn-outline btn-sm" onclick="showQR('${b.code}')">Show QR</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="openModal('cancel-modal')">Cancel</button>`:''}
+          <a href="parking-details.html?id=1" class="btn btn-outline btn-sm">Details</a>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function filterTab(tab, el){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderBookings();
+}
+function showQR(code){
+  toast(`QR for ${code} — scan at gate`,'info');
+}
+function cancelBooking(){
+  closeModal('cancel-modal');
+  toast('Booking cancelled. Refund in 3–5 business days.','success');
+  setTimeout(renderBookings, 500);
+}
+
+document.getElementById('booking-search').addEventListener('input', e=>{ currentSearch=e.target.value; renderBookings(); });
+document.getElementById('booking-sort').addEventListener('change', renderBookings);
+
+function updateStats() {
+  const total     = bookings.length;
+  const active    = bookings.filter(b=>b.status==='active').length;
+  const completed = bookings.filter(b=>b.status==='completed').length;
+  const cancelled = bookings.filter(b=>b.status==='cancelled').length;
+  const confirmed = bookings.filter(b=>b.status==='confirmed'||b.status==='pending').length;
+  const spent     = bookings.filter(b=>b.status!=='cancelled').reduce((s,b)=>s+b.amount,0);
+
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  set('stat-total',    total);
+  set('stat-active',   active);
+  set('stat-completed',completed);
+  set('stat-spent',    '₹'+spent.toLocaleString('en-IN'));
+  set('tab-label-all',      'All ('+total+')');
+  set('tab-label-active',   'Active ('+active+')');
+  set('tab-label-confirmed','Upcoming ('+confirmed+')');
+  set('tab-label-completed','Completed ('+completed+')');
+  set('tab-label-cancelled','Cancelled ('+cancelled+')');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!auth.guard()) return;
+  const user = auth.getUser();
+  if(user){
+    document.getElementById('sidebar-name').textContent = user.firstName+' '+(user.lastName||'');
+    document.getElementById('sidebar-avatar').textContent = ((user.firstName||'')[0]+''+(user.lastName||'')[0]).toUpperCase();
+  }
+  updateStats();
+  renderBookings();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+/* ============================================
+   ParkIQ — Dashboard Styles
+   ============================================ */
+ 
+   .dash-layout {
+    display: flex;
+    min-height: 100vh;
+  }
+   
+  /* ── Sidebar ── */
+  .sidebar {
+    background: #0a0a0a;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 260px; z-index: 100;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+   
+  .sidebar-header {
+    padding: 1.35rem 1.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(10,10,10,0) 70%);
+  }
+   
+  .sidebar-nav { padding: 1rem 0.85rem; flex: 1; }
+   
+  .nav-section-label {
+    font-size: 0.63rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: rgba(255,255,255,0.3);
+    padding: 0.5rem 0.75rem; margin-top: 0.5rem;
+  }
+   
+  .sidebar-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0.65rem 0.85rem; border-radius: 8px;
+    color: rgba(255,255,255,0.55); font-size: 0.875rem; text-decoration: none;
+    transition: background .15s, color .15s; cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .sidebar-link svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+  .sidebar-link:hover  { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+  .sidebar-link.active { background: rgba(245,158,11,0.15); color: var(--amber); }
+   
+  .sidebar-link .badge-count {
+    margin-left: auto; background: var(--amber); color: #0a0a0a;
+    font-size: 0.65rem; font-weight: 700; border-radius: 10px;
+    padding: 1px 6px; min-width: 18px; text-align: center;
+  }
+   
+  .sidebar-footer {
+    padding: 1rem 0.85rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .sidebar-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0.65rem 0.75rem; border-radius: var(--radius-sm);
+  }
+  .sidebar-user-info       { flex: 1; min-width: 0; }
+  .sidebar-user-name       { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.85); }
+  .sidebar-user-role       { font-size: 0.72rem; color: rgba(255,255,255,0.4); }
+   
+  /* ── Main content ── */
+  .dash-main {
+    margin-left: 260px;
+    padding-top: 70px;
+    min-height: 100vh;
+    width: calc(100% - 260px);
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+   
+  /* ── Topbar ── */
+  .dash-topbar {
+    position: fixed; top: 0; left: 260px; right: 0; z-index: 99;
+    background: rgba(8,8,8,0.95); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.85rem 2rem; height: 70px;
+    box-sizing: border-box;
+  }
+   
+  .topbar-title  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; color: #ffffff; }
+  .topbar-right  { display: flex; align-items: center; gap: 1rem; }
+   
+  .notif-btn {
+    position: relative; background: none; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.5rem; cursor: pointer;
+    color: var(--muted); display: flex; align-items: center; transition: color .2s, border-color .2s;
+  }
+  .notif-btn:hover { color: var(--text); border-color: rgba(255,255,255,.15); }
+  .notif-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--amber);
+  }
+   
+  /* ── Content area ── */
+  .dash-content {
+    padding: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+   
+  /* ── Stat cards ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+  }
+  .stat-card-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .stat-card-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; }
+  .stat-card-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 0.4rem; }
+  .stat-card-sub .up   { color: var(--success); }
+  .stat-card-sub .down { color: var(--danger); }
+  .stat-icon {
+    float: right; width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--amber-pale2);
+  }
+  .stat-icon svg { width: 20px; height: 20px; stroke: var(--amber); fill: none; stroke-width: 1.8; }
+   
+  /* ── Chart ── */
+  .chart-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+  }
+  .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+  .chart-title  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+  .chart-area   { position: relative; height: 220px; }
+   
+  .bar-chart  { display: flex; align-items: flex-end; gap: 8px; height: 100%; }
+  .bar-group  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar {
+    width: 100%; border-radius: 4px 4px 0 0;
+    background: var(--amber-pale2); transition: background .2s;
+    cursor: pointer; min-height: 4px;
+  }
+  .bar:hover  { background: var(--amber); }
+  .bar-label  { font-size: 0.65rem; color: var(--muted); }
+  .bar-val    { font-size: 0.65rem; color: var(--amber); font-weight: 500; }
+   
+  /* ── Table card ── */
+  .table-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .table-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+  .table-title  { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+   
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    padding: 0.75rem 1.25rem; text-align: left; font-size: 0.72rem;
+    color: var(--muted); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border); background: var(--bg3);
+  }
+  .data-table td { padding: 0.9rem 1.25rem; font-size: 0.875rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+   
+  /* ── Booking item ── */
+  .booking-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  .booking-item:last-child { border-bottom: none; }
+  .booking-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--amber-pale2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .booking-icon svg { width: 20px; height: 20px; stroke: var(--amber); fill: none; stroke-width: 1.8; }
+  .booking-info   { flex: 1; }
+  .booking-name   { font-weight: 500; font-size: 0.9rem; }
+  .booking-meta   { font-size: 0.78rem; color: var(--muted); }
+  .booking-amount { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+   
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state svg { width: 48px; height: 48px; stroke: var(--border); fill: none; stroke-width: 1.5; margin: 0 auto 1rem; display: block; }
+  .empty-state h3  { font-family: 'DM Sans'; font-weight: 500; color: var(--muted); margin-bottom: 0.5rem; }
+   
+  /* ── Grid layouts ── */
+  .dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .dash-grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+   
+  /* ── Dropdown ── */
+  .dropdown { position: relative; }
+  .dropdown-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-md); min-width: 180px;
+    box-shadow: var(--shadow); z-index: 300; overflow: hidden; display: none;
+  }
+  .dropdown-menu.open { display: block; animation: scaleIn .15s ease; }
+  .dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0.65rem 1rem; font-size: 0.875rem; color: var(--muted);
+    cursor: pointer; transition: background .15s, color .15s;
+  }
+  .dropdown-item:hover { background: var(--bg3); color: var(--text); }
+  .dropdown-item svg   { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .dropdown-divider    { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+   
+  /* ── Responsive ── */
+  @media (max-width: 1100px) {
+    .stat-grid   { grid-template-columns: repeat(2,1fr); }
+    .dash-grid-2 { grid-template-columns: 1fr; }
+    .dash-grid-3 { grid-template-columns: 1fr; }
+  }
+   
+  @media (max-width: 768px) {
+    .sidebar     { width: 260px; transform: translateX(-100%); transition: transform .3s; }
+    .sidebar.open { transform: translateX(0); }
+    .dash-main   { margin-left: 0; width: 100%; }
+    .dash-topbar { left: 0; }
+    .stat-grid   { grid-template-columns: 1fr 1fr; }
+  }
+   
+  @media (max-width: 480px) {
+    .stat-grid   { grid-template-columns: 1fr; }
+    .dash-content { padding: 1rem; }
+  }
+   
+  /* ── Inline badges (role labels, status) ── */
+  .badge-amber { background: rgba(245,158,11,0.18); color: #F5A623; border: 1px solid rgba(245,158,11,0.35); }
+  .badge-green { background: rgba(16,185,129,0.12); color: #10B981; border: 1px solid rgba(16,185,129,0.25); }
+  .badge-muted { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.1); }
+  .badge-red   { background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); }
+
+  /* Role chip near logo */
+  .role-chip {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 10px; line-height: 1.4;
+  }
+  .role-chip-owner { background: rgba(245,158,11,0.2); color: #F5A623; border: 1px solid rgba(245,158,11,0.4); }
+  .role-chip-user  { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(99,102,241,0.3); }

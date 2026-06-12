@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkIQ — Smart Parking System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #181818;
+    --amber: #F5A623;
+    --amber-dim: #C47F0A;
+    --amber-pale: rgba(245,166,35,0.08);
+    --amber-pale2: rgba(245,166,35,0.14);
+    --text: #F0EDE6;
+    --muted: #888580;
+    --border: rgba(255,255,255,0.07);
+    --border-amber: rgba(245,166,35,0.3);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 5vw;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(14px);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 1.35rem;
+    color: var(--text); text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo span { color: var(--amber); }
+
+  .logo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .nav-links { display: flex; align-items: center; gap: 2rem; }
+  .nav-links a {
+    text-decoration: none; color: var(--muted); font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn-nav {
+  background: var(--amber);
+  color: #0a0a0a !important;
+  padding: 0.7rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-nav:hover {
+  background: #e09514;
+  color: #0a0a0a !important;
+  transform: translateY(-2px);
+}
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 8rem 5vw 5rem;
+    position: relative; overflow: visible;
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(245,166,35,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 300px; z-index: 0;
+    background: radial-gradient(ellipse, rgba(245,166,35,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--amber-pale); border: 1px solid var(--border-amber);
+    color: var(--amber); padding: 0.3rem 0.9rem; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 500; margin-bottom: 2rem;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.6s ease both;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 7vw, 6rem);
+    font-weight: 800; line-height: 1.05;
+    letter-spacing: -0.03em;
+    max-width: 900px;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .hero h1 em { color: var(--amber); font-style: normal; }
+
+  .hero-sub {
+    font-size: 1.1rem; color: var(--muted); max-width: 520px;
+    margin: 1.5rem auto 2.5rem;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .hero-cta {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: var(--amber); color: #0a0a0a;
+    padding: 0.85rem 2rem; border-radius: 8px;
+    font-weight: 500; font-size: 1rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .btn-primary:hover { background: #e09514; transform: translateY(-2px); }
+
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    padding: 0.85rem 2rem; border-radius: 8px;
+    font-weight: 400; font-size: 1rem;
+    text-decoration: none; border: 1px solid var(--border);
+    transition: border-color 0.2s, transform 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-secondary:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+  .hero-stats {
+    display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 5rem;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem;
+    color: var(--amber);
+  }
+  .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+  /* ─── STRIP ─── */
+  .strip {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    background: var(--bg2); padding: 1.2rem 5vw;
+    display: flex; align-items: center; gap: 3rem;
+    overflow: hidden; white-space: nowrap;
+  }
+  .strip-label { color: var(--muted); font-size: 0.78rem; flex-shrink: 0; }
+  .strip-items { display: flex; gap: 3rem; animation: scroll 20s linear infinite; }
+  .strip-item { color: var(--muted); font-size: 0.85rem; display: flex; align-items: center; gap: 6px; }
+  .strip-item svg { width: 14px; height: 14px; fill: var(--amber); flex-shrink: 0; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ─── SECTION ─── */
+  section { padding: 6rem 5vw; }
+  .section-tag {
+    display: inline-block; background: var(--amber-pale); color: var(--amber);
+    border: 1px solid var(--border-amber);
+    padding: 0.25rem 0.8rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    letter-spacing: -0.02em; line-height: 1.15;
+    max-width: 600px;
+  }
+  .section-sub { color: var(--muted); max-width: 500px; margin-top: 0.75rem; }
+
+  /* ─── FEATURES ─── */
+  .features { background: var(--bg); }
+  .features-header { text-align: center; margin-bottom: 4rem; }
+  .features-header .section-title, .features-header .section-sub { max-width: 100%; }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--border);
+  }
+
+  .feat-card {
+    background: var(--bg2); padding: 2.5rem 2rem;
+    transition: background 0.25s;
+    cursor: default;
+  }
+  .feat-card:hover { background: var(--bg3); }
+
+  .feat-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--amber-pale2); border: 1px solid var(--border-amber);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+  .feat-icon svg { width: 22px; height: 22px; stroke: var(--amber); fill: none; stroke-width: 1.8; }
+
+  .feat-title {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 1.05rem; margin-bottom: 0.5rem;
+  }
+  .feat-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+  /* ─── HOW IT WORKS ─── */
+  .how { background: var(--bg2); }
+  .how-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex; gap: 1.25rem; align-items: flex-start;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .step:last-child { border-bottom: none; }
+  .step:hover .step-body h3 { color: var(--amber); }
+
+  .step-num {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem;
+    color: var(--border); line-height: 1; flex-shrink: 0; width: 3rem;
+    min-width: 3rem;
+    transition: color 0.2s;
+  }
+  .step:hover .step-num { color: var(--amber-pale2); }
+
+  .step-body h3 {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 1rem; margin-bottom: 0.3rem; transition: color 0.2s;
+  }
+  .step-body p { color: var(--muted); font-size: 0.875rem; }
+
+  /* ─── PHONE MOCKUP ─── */
+  .phone-wrap {
+    display: flex; justify-content: center; align-items: center;
+    position: relative;
+  }
+  .phone-glow {
+    position: absolute; inset: -40px;
+    background: radial-gradient(ellipse at center, rgba(245,166,35,0.1) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .phone {
+    width: 260px; background: #111; border-radius: 36px;
+    border: 6px solid #222; padding: 1rem;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
+    position: relative; z-index: 1;
+  }
+  .phone-notch {
+    width: 80px; height: 24px; background: #0a0a0a;
+    border-radius: 0 0 14px 14px; margin: 0 auto 1rem;
+  }
+  .phone-screen { background: #0a0a0a; border-radius: 20px; padding: 1rem; }
+
+  .map-area {
+    height: 140px; background: #161616; border-radius: 12px; margin-bottom: 1rem;
+    position: relative; overflow: hidden;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(245,166,35,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .map-pin {
+    position: absolute; width: 12px; height: 12px;
+    border-radius: 50%; border: 2px solid var(--amber);
+    background: rgba(245,166,35,0.3);
+  }
+  .map-pin::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    background: rgba(245,166,35,0.15); animation: ripple 2s ease-out infinite;
+  }
+  .pin-a { top: 35%; left: 45%; }
+  .pin-b { top: 55%; left: 65%; background: rgba(255,255,255,0.1); border-color: #555; }
+  .pin-c { top: 20%; left: 25%; background: rgba(255,255,255,0.1); border-color: #555; }
+  @keyframes ripple { 0%{transform:scale(1);opacity:1} 100%{transform:scale(3);opacity:0} }
+
+  .ph-label { font-size: 0.6rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .ph-spot {
+    background: #1a1a1a; border-radius: 8px; padding: 0.5rem 0.65rem;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.4rem; border: 1px solid rgba(255,255,255,0.05);
+  }
+  .ph-spot-name { font-size: 0.65rem; color: var(--text); font-weight: 500; }
+  .ph-spot-price { font-size: 0.65rem; color: var(--amber); font-weight: 600; }
+  .ph-avail { font-size: 0.55rem; color: #4CAF50; }
+
+  /* ─── PRICING ─── */
+  .pricing { background: var(--bg); }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem; margin-top: 3.5rem;
+  }
+
+  .price-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .price-card:hover { border-color: rgba(245,166,35,0.2); transform: translateY(-4px); }
+  .price-card.featured {
+    border-color: var(--amber); background: var(--amber-pale);
+    position: relative;
+  }
+  .price-card.featured::before {
+    content: 'Most Popular';
+    position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--amber); color: #0a0a0a;
+    font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.8rem;
+    border-radius: 0 0 8px 8px; letter-spacing: 0.05em;
+  }
+
+  .price-tier {
+    font-size: 0.8rem; color: var(--muted); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem;
+  }
+  .price-amount {
+    font-family: 'Syne', sans-serif; font-size: 2.8rem; font-weight: 800; line-height: 1;
+  }
+  .price-amount span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+  .price-desc { color: var(--muted); font-size: 0.85rem; margin: 0.75rem 0 1.5rem; }
+
+  .price-divider { border: none; border-top: 1px solid var(--border); margin-bottom: 1.5rem; }
+
+  .price-features { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 2rem; }
+  .price-features li {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.875rem; color: var(--muted);
+  }
+  .price-features li svg { width: 16px; height: 16px; stroke: var(--amber); fill: none; stroke-width: 2; flex-shrink: 0; }
+
+  .btn-plan {
+    display: block; text-align: center; text-decoration: none;
+    padding: 0.75rem; border-radius: 8px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  .btn-plan-outline {
+    border: 1px solid var(--border); color: var(--text);
+  }
+  .btn-plan-outline:hover { border-color: var(--amber); color: var(--amber); }
+  .btn-plan-fill { background: var(--amber); color: #0a0a0a; border: 1px solid var(--amber); }
+  .btn-plan-fill:hover { background: #e09514; }
+
+  /* ─── TESTIMONIALS ─── */
+  .testimonials { background: var(--bg2); }
+  .testi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem; margin-top: 3rem;
+  }
+  .testi-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.75rem;
+  }
+  .stars { display: flex; gap: 2px; margin-bottom: 1rem; }
+  .star { width: 14px; height: 14px; fill: var(--amber); }
+  .testi-text { font-size: 0.9rem; color: var(--muted); line-height: 1.65; margin-bottom: 1.25rem; }
+  .testi-author { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; background: var(--amber-pale2);
+    color: var(--amber); flex-shrink: 0;
+  }
+  .author-name { font-size: 0.875rem; font-weight: 500; }
+  .author-role { font-size: 0.75rem; color: var(--muted); }
+
+  /* ─── CTA BANNER ─── */
+  .cta-banner {
+    background: var(--bg);
+    padding: 5rem 5vw;
+    text-align: center;
+  }
+  .cta-box {
+    background: var(--amber-pale); border: 1px solid var(--border-amber);
+    border-radius: 20px; padding: 4rem 2rem; max-width: 760px; margin: 0 auto;
+    position: relative; overflow: hidden;
+  }
+  .cta-box::before {
+    content: '';
+    position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-box h2 {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2.5rem); margin-bottom: 1rem;
+  }
+  .cta-box p { color: var(--muted); max-width: 440px; margin: 0 auto 2rem; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border); background: var(--bg);
+    padding: 3rem 5vw 2rem;
+  }
+  .footer-top {
+    display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 3rem;
+    margin-bottom: 3rem;
+  }
+  .footer-brand p { color: var(--muted); font-size: 0.875rem; margin-top: 0.75rem; max-width: 240px; }
+  .footer-col h4 {
+    font-weight: 500; font-size: 0.875rem; margin-bottom: 1rem; color: var(--text);
+  }
+  .footer-col a {
+    display: block; color: var(--muted); text-decoration: none;
+    font-size: 0.85rem; margin-bottom: 0.5rem; transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--text); }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--border); padding-top: 1.5rem;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-bottom p { color: var(--muted); font-size: 0.8rem; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .how-inner { grid-template-columns: 1fr; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-dot"></div>
+    Park<span>IQ</span>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="pages/login.html" class="btn-nav" data-auth="guest">Sign in</a>
+    <a href="pages/admin-login.html" class="btn-nav" id="nav-admin-btn">Admin</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <h1>Find & book parking <em>in seconds</em></h1>
+
+  <p class="hero-sub">
+    Real-time availability, instant booking, QR check-in. No more circling the block — your spot is waiting.
+  </p>
+
+  <div class="hero-cta">
+    <a href="pages/map.html" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Find parking near me
+    </a>
+    <a href="pages/register.html" class="btn-secondary">
+      Create free account →
+    </a>
+  </div>
+
+  <div class="hero-stats" id="hero-stats" style="visibility:hidden">
+    <div class="stat-item">
+      <div class="stat-num" id="stat-locations"></div>
+      <div class="stat-label">Parking locations</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-bookings"></div>
+      <div class="stat-label">Bookings completed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-drivers"></div>
+      <div class="stat-label">Registered users</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="stat-rating"></div>
+      <div class="stat-label">Average rating</div>
+    </div>
+  </div>
+</section>
+
+<!-- SCROLLING STRIP -->
+<div class="strip">
+  <span class="strip-label">Trusted by</span>
+  <div class="strip-items" id="strip">
+    <!-- duplicated for seamless loop -->
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>24/7 Support</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>EV Charging Spots</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Real-time Availability</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>QR Code Entry</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Instant Refunds</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Covered Parking</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>CCTV Security</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Monthly Plans</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>24/7 Support</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>EV Charging Spots</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Real-time Availability</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>QR Code Entry</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Instant Refunds</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Covered Parking</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>CCTV Security</span>
+    <span class="strip-item"><svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>Monthly Plans</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-header reveal">
+    <div class="section-tag">Features</div>
+    <h2 class="section-title">Everything you need to park smarter</h2>
+    <p class="section-sub">From real-time maps to automated QR entry — parking that just works.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="feat-title">Real-time availability</div>
+      <p class="feat-desc">Live slot counts updated every 60 seconds. Know exactly how many spots are open before you leave home.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div class="feat-title">Smart map search</div>
+      <p class="feat-desc">Search by location, filter by price, EV charging, covered spots, and more. Sort by distance or rating instantly.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="feat-title">Instant booking</div>
+      <p class="feat-desc">Reserve a spot in under 30 seconds. Booking confirmation and QR code delivered immediately via the app.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div class="feat-title">QR code check-in</div>
+      <p class="feat-desc">No ticket machines, no fuss. Scan your QR on arrival and departure. Automatic billing based on actual time used.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="feat-title">CCTV & security</div>
+      <p class="feat-desc">Filter for locations with verified CCTV coverage, on-site security, and handicap-accessible parking.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="feat-title">Usage analytics</div>
+      <p class="feat-desc">Owners get detailed revenue dashboards, peak-hour insights, and occupancy trends updated daily.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <div>
+      <div class="section-tag reveal">How it works</div>
+      <h2 class="section-title reveal">Parked in 4 simple steps</h2>
+      <p class="section-sub reveal">ParkIQ removes every friction point from the parking experience.</p>
+      <div class="steps" style="margin-top:2.5rem">
+        <div class="step reveal">
+          <div class="step-num">01</div>
+          <div class="step-body">
+            <h3>Search your destination</h3>
+            <p>Enter your address or use GPS. See all available spots on the live map within your chosen radius.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">02</div>
+          <div class="step-body">
+            <h3>Pick & book your spot</h3>
+            <p>Choose by price, rating, or features. Lock your slot and pay securely — card, UPI, or wallet.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">03</div>
+          <div class="step-body">
+            <h3>Arrive & scan QR</h3>
+            <p>Drive to your reserved spot. Scan your unique QR code at the gate — no ticket, no delay.</p>
+          </div>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">04</div>
+          <div class="step-body">
+            <h3>Leave & auto-pay</h3>
+            <p>Scan out when done. Any difference from your estimate is automatically settled or refunded.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-wrap reveal">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="map-area">
+            <div class="map-grid"></div>
+            <div class="map-pin pin-a"></div>
+            <div class="map-pin pin-b"></div>
+            <div class="map-pin pin-c"></div>
+          </div>
+          <p class="ph-label">NEARBY SPOTS</p>
+          <div class="ph-spot">
+            <div>
+              <div class="ph-spot-name">CP Central Parking</div>
+              <div class="ph-avail">45 spots free</div>
+            </div>
+            <div class="ph-spot-price">₹650/hr</div>
+          </div>
+          <div class="ph-spot">
+            <div>
+              <div class="ph-spot-name">Cyber Hub Parking</div>
+              <div class="ph-avail">33 spots free</div>
+            </div>
+            <div class="ph-spot-price">₹850/hr</div>
+          </div>
+          <div class="ph-spot">
+            <div>
+              <div class="ph-spot-name">Nehru Place Parking</div>
+              <div class="ph-avail">78 spots free</div>
+            </div>
+            <div class="ph-spot-price">₹500/hr</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="reveal">
+    <div class="section-tag">Pricing</div>
+    <h2 class="section-title">Simple, transparent pricing</h2>
+    <p class="section-sub">No hidden fees. Pay per booking or go monthly for heavy parkers.</p>
+  </div>
+  <div class="pricing-grid reveal">
+    <div class="price-card">
+      <div class="price-tier">Pay as you go</div>
+      <div class="price-amount">Free <span>to sign up</span></div>
+      <p class="price-desc">Book any time, pay only for what you use. No commitments.</p>
+      <hr class="price-divider">
+      <ul class="price-features">
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Real-time map access</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Instant booking & QR</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Booking history</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Standard support</li>
+      </ul>
+      <a href="pages/register.html" class="btn-plan btn-plan-outline">Get started</a>
+    </div>
+
+    <div class="price-card featured">
+      <div class="price-tier">Monthly pass</div>
+      <div class="price-amount">₹1,590 <span>/ month</span></div>
+      <p class="price-desc">Save up to 25% on every booking with priority slot access.</p>
+      <hr class="price-divider">
+      <ul class="price-features">
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Everything in Free</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 25% discount on bookings</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Priority slot reservation</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> EV charger access</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Priority support</li>
+      </ul>
+      <a href="pages/register.html" class="btn-plan btn-plan-fill">Start free 7-day trial</a>
+    </div>
+
+    <div class="price-card">
+      <div class="price-tier">Parking owner</div>
+      <div class="price-amount">₹4,090 <span>/ month</span></div>
+      <p class="price-desc">List your lots, manage slots, and track revenue in one dashboard.</p>
+      <hr class="price-divider">
+      <ul class="price-features">
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Unlimited listings</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Revenue analytics</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Slot management tools</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Promo code creation</li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Dedicated account manager</li>
+      </ul>
+      <a href="pages/register.html" class="btn-plan btn-plan-outline">Become an owner</a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="testimonials-section">
+  <div class="reveal" style="text-align:center">
+    <div class="section-tag">Reviews</div>
+    <h2 class="section-title" style="max-width:100%">Drivers love ParkIQ</h2>
+  </div>
+  <div class="testi-grid reveal" id="testi-grid">
+    <div id="testi-loading" style="grid-column:1/-1;text-align:center;color:var(--muted);padding:3rem 0;font-size:0.9rem;"></div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<div class="cta-banner">
+  <div class="cta-box reveal">
+    <h2>Your spot is waiting.</h2>
+    <p>Join drivers across India who've stopped stressing about parking. Sign up free — no credit card needed.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <a href="pages/register.html" class="btn-primary">Create free account</a>
+      <a href="pages/map.html" class="btn-secondary">Explore the map →</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <a class="logo" href="#" style="font-size:1.1rem">
+        <div class="logo-dot"></div>
+        Park<span>IQ</span>
+      </a>
+      <p>The smart way to find, book, and manage parking — everywhere you go.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="pages/map.html">Find Parking</a>
+      <a href="pages/booking.html">Book a Spot</a>
+      <a href="pages/dashboard.html">Dashboard</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>For Owners</h4>
+      <a href="pages/owner-dashboard.html">Owner Dashboard</a>
+      <a href="pages/register.html">List Your Lot</a>
+      <a href="#">Analytics</a>
+      <a href="#">Payout Setup</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="pages/admin-login.html" style="color:#EF4444;font-size:.75rem;margin-top:.5rem">Admin Portal</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 ParkIQ. All rights reserved.</p>
+    <p style="color:var(--muted);font-size:0.8rem">Built with the Smart Parking System API</p>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+  document.querySelectorAll('.reveal').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * 0.07 + 's';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
+<!-- Auth-aware nav: show/hide Sign in vs Account -->
+<script src="pages/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // auth object available from app.js
+  const user = auth.getUser();
+  document.querySelectorAll('[data-auth]').forEach(el => {
+    const requires = el.dataset.auth;
+    if (requires === 'guest' && user)  el.style.display = 'none';
+  });
+  // Admin button: if already logged in as admin, go straight to dashboard
+  const adminBtn = document.getElementById('nav-admin-btn');
+  if (adminBtn && user && user.role === 'admin') {
+    adminBtn.href = 'pages/admin-dashboard.html';
+    adminBtn.textContent = 'Admin Panel';
+  }
+});
+
+// ── Dynamic Reviews ──────────────────────────────────────────
+(async function loadReviews() {
+  const section = document.getElementById('testimonials-section');
+  const grid    = document.getElementById('testi-grid');
+  const loading = document.getElementById('testi-loading');
+
+  const starSVG = `<svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+  function getInitials(first, last) {
+    return ((first?.[0] || '') + (last?.[0] || '')).toUpperCase() || '?';
+  }
+
+  function renderCard(r) {
+    const stars    = starSVG.repeat(Math.min(5, Math.max(1, Math.round(r.rating || 5))));
+    const initials = getInitials(r.firstName, r.lastName);
+    const name     = ((r.firstName || '') + ' ' + (r.lastName || '')).trim() || 'Anonymous';
+    const role     = r.parkingName || '';
+    return `
+      <div class="testi-card">
+        <div class="stars">${stars}</div>
+        <p class="testi-text">"${r.comment}"</p>
+        <div class="testi-author">
+          <div class="avatar">${initials}</div>
+          <div>
+            <div class="author-name">${name}</div>
+            ${role ? `<div class="author-role">${role}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  try {
+    const res  = await fetch('/api/reviews/top?limit=6');
+    const data = await res.json();
+    const reviews = Array.isArray(data?.data) ? data.data : [];
+
+    loading.remove();
+
+    if (reviews.length === 0) {
+      // No reviews yet — hide the entire section cleanly
+      section.style.display = 'none';
+      return;
+    }
+
+    reviews.forEach(r => grid.insertAdjacentHTML('beforeend', renderCard(r)));
+    grid.querySelectorAll('.testi-card').forEach(el => el.classList.add('visible'));
+
+  } catch (e) {
+    // API unreachable — hide section rather than showing an error to visitors
+    section.style.display = 'none';
+  }
+})();
+
+// ── Dynamic Hero Stats ───────────────────────────────────────
+(async function loadStats() {
+  const statsDiv = document.getElementById('hero-stats');
+  try {
+    // Fetch counts from real API endpoints in parallel
+    const [locRes, userRes, bookRes, reviewRes] = await Promise.allSettled([
+      fetch('/api/parking?limit=1'),
+      fetch('/api/users/count'),
+      fetch('/api/bookings/count'),
+      fetch('/api/reviews/stats'),
+    ]);
+
+    let locations = null, users = null, bookings = null, rating = null;
+
+    if (locRes.status === 'fulfilled' && locRes.value.ok) {
+      const d = await locRes.value.json();
+      locations = d?.data?.total ?? d?.total ?? null;
+    }
+    if (userRes.status === 'fulfilled' && userRes.value.ok) {
+      const d = await userRes.value.json();
+      users = d?.data?.count ?? d?.count ?? null;
+    }
+    if (bookRes.status === 'fulfilled' && bookRes.value.ok) {
+      const d = await bookRes.value.json();
+      bookings = d?.data?.count ?? d?.count ?? null;
+    }
+    if (reviewRes.status === 'fulfilled' && reviewRes.value.ok) {
+      const d = await reviewRes.value.json();
+      rating = d?.data?.avg_rating ?? d?.avg_rating ?? null;
+    }
+
+    // Only show the section if at least one stat loaded
+    const hasAny = locations !== null || users !== null || bookings !== null || rating !== null;
+    if (!hasAny) return; // hide entirely if DB has no data yet
+
+    function fmt(n) {
+      if (n === null) return '—';
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M+';
+      if (n >= 1000)    return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k+';
+      return n.toLocaleString('en-IN') + '+';
+    }
+
+    if (locations !== null) document.getElementById('stat-locations').textContent = fmt(locations);
+    if (bookings  !== null) document.getElementById('stat-bookings').textContent  = fmt(bookings);
+    if (users     !== null) document.getElementById('stat-drivers').textContent   = fmt(users);
+    if (rating    !== null) document.getElementById('stat-rating').textContent    = parseFloat(rating).toFixed(1) + '★';
+
+    // Reveal only stats that have real data
+    statsDiv.querySelectorAll('.stat-item').forEach(item => {
+      const num = item.querySelector('.stat-num');
+      if (!num.textContent || num.textContent === '—') item.style.display = 'none';
+    });
+
+    statsDiv.style.visibility = 'visible';
+  } catch(e) {
+    // If all APIs fail, keep section hidden — no fake numbers shown
+  }
+})();
+</script>

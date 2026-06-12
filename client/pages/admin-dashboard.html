@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — ParkIQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/admin.css">
+<style>
+.tab-panels > div { display: none; }
+.tab-panels > div.active { display: block; }
+.loading-row td { text-align:center; color:var(--muted); padding:2rem; }
+.stat-loading { opacity:.4; font-size:.85rem; }
+</style>
+</head>
+<body>
+<div id="page-loader" class="page-loader"><div class="spinner"></div></div>
+<div id="toast-container"></div>
+
+<div class="dash-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <a href="index.html" class="nav-logo" style="font-size:1.1rem"><div class="logo-dot"></div>Park<span>IQ</span></a>
+        <span class="admin-badge">Admin</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <a href="#" class="sidebar-link active" data-tab="overview">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="sidebar-link" data-tab="analytics">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Analytics
+      </a>
+
+      <div class="nav-section-label">Management</div>
+      <a href="#" class="sidebar-link" data-tab="users">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users
+        <span class="badge-count" id="users-count-badge">…</span>
+      </a>
+      <a href="#" class="sidebar-link" data-tab="parking">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Parking Lots
+        <span class="badge-count" id="pending-count-badge" style="background:#EF4444">0</span>
+      </a>
+      <a href="#" class="sidebar-link" data-tab="bookings">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Bookings
+      </a>
+      <a href="#" class="sidebar-link" data-tab="promos">
+        <svg viewBox="0 0 24 24"><line x1="9" y1="21" x2="9" y2="15"/><line x1="15" y1="3" x2="15" y2="9"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+        Promo Codes
+      </a>
+
+      <div class="nav-section-label">System</div>
+      <a href="#" class="sidebar-link" data-tab="settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Settings
+      </a>
+      <a href="#" class="sidebar-link" id="logout-btn">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar avatar-sm" id="admin-avatar" style="background:rgba(239,68,68,.15);color:#EF4444">SA</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="admin-name">System Admin</div>
+          <div class="sidebar-user-role" style="color:#EF4444">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Admin Dashboard</div>
+        <div style="font-size:.75rem;color:var(--muted)" id="topbar-sub">Platform overview & management</div>
+      </div>
+      <div class="topbar-right">
+        <button class="notif-btn" aria-label="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="notif-dot"></div>
+        </button>
+        <button class="btn btn-primary btn-sm" id="open-add-parking-btn">+ Add Parking</button>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <div class="tab-panels">
+
+        <!-- ── OVERVIEW ── -->
+        <div id="tab-overview" class="active">
+          <div class="analytics-grid">
+            <div class="analytics-card amber">
+              <div class="analytics-label">Total Revenue</div>
+              <div class="analytics-val" id="stat-revenue"><span class="stat-loading">Loading…</span></div>
+              <div class="analytics-trend trend-up" id="stat-revenue-sub"></div>
+            </div>
+            <div class="analytics-card green">
+              <div class="analytics-label">Total Bookings</div>
+              <div class="analytics-val" id="stat-bookings"><span class="stat-loading">Loading…</span></div>
+              <div class="analytics-trend trend-up" id="stat-bookings-sub"></div>
+            </div>
+            <div class="analytics-card blue">
+              <div class="analytics-label">Registered Users</div>
+              <div class="analytics-val" id="stat-users"><span class="stat-loading">Loading…</span></div>
+              <div class="analytics-trend trend-up" id="stat-users-sub"></div>
+            </div>
+            <div class="analytics-card red">
+              <div class="analytics-label">Pending Approvals</div>
+              <div class="analytics-val" id="stat-pending"><span class="stat-loading">Loading…</span></div>
+              <div class="analytics-trend" id="stat-pending-sub" style="color:var(--danger)"></div>
+            </div>
+          </div>
+
+          <div class="dash-grid-2" style="margin-bottom:1.5rem">
+            <div class="chart-card">
+              <div class="chart-header">
+                <div class="chart-title">Revenue — Last 7 days</div>
+                <span class="badge badge-amber" id="chart-month-label"></span>
+              </div>
+              <div class="chart-area">
+                <div class="bar-chart" id="revenue-chart"><div style="color:var(--muted);font-size:.8rem;padding:1rem">Loading chart…</div></div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="chart-header" style="padding:1rem 1.25rem .75rem">
+                <div class="chart-title">Pending Approvals</div>
+                <span class="badge badge-red" id="pending-approvals-badge">0 new</span>
+              </div>
+              <div style="padding:1rem" id="pending-approvals-container">
+                <div style="color:var(--muted);font-size:.85rem;text-align:center;padding:1.5rem">Loading pending approvals…</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title">Recent Bookings</div>
+              <button class="btn btn-ghost btn-sm" data-tab-link="bookings">View all →</button>
+            </div>
+            <table class="data-table">
+              <thead><tr><th>Booking Code</th><th>User</th><th>Parking</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody id="recent-bookings-tbody">
+                <tr class="loading-row"><td colspan="6">Loading recent bookings…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── USERS ── -->
+        <div id="tab-users">
+          <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
+            <input type="text" class="form-input" placeholder="Search users…" id="user-search" style="max-width:300px">
+            <select class="form-select" id="user-role-filter" style="width:auto">
+              <option value="">All roles</option>
+              <option value="user">Users</option>
+              <option value="owner">Owners</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title" id="users-table-title">All Users</div></div>
+            <table class="data-table" id="users-table">
+              <thead><tr><th>User</th><th>Role</th><th>Bookings</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="users-tbody">
+                <tr class="loading-row"><td colspan="6">Loading users…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── PARKING ── -->
+        <div id="tab-parking">
+          <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+            <input type="text" class="form-input" placeholder="Search parking lots…" id="parking-search" style="max-width:300px">
+            <select class="form-select" id="parking-status-filter" style="width:auto">
+              <option value="">All status</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button class="btn btn-primary btn-sm" style="margin-left:auto" id="open-add-parking-btn2">+ Add Parking Lot</button>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title" id="parking-table-title">All Parking Locations</div></div>
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Owner</th><th>City</th><th>Slots</th><th>Price/hr</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="parking-table-body">
+                <tr class="loading-row"><td colspan="8">Loading parking lots…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── BOOKINGS ── -->
+        <div id="tab-bookings">
+          <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap">
+            <input type="text" class="form-input" placeholder="Search by code, user, parking…" id="booking-search" style="max-width:300px">
+            <select class="form-select" id="booking-status-filter" style="width:auto">
+              <option value="">All status</option>
+              <option value="active">Active</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <button class="btn btn-outline btn-sm" id="export-csv-btn">⬇ Export CSV</button>
+          </div>
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-title" id="bookings-table-title">All Bookings</div>
+              <div style="font-size:.8rem;color:var(--muted)">Total revenue: <strong style="color:var(--amber)" id="bookings-total-revenue">—</strong></div>
+            </div>
+            <table class="data-table" id="bookings-table">
+              <thead><tr><th>Code</th><th>User</th><th>Parking</th><th>Duration</th><th>Amount</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="bookings-tbody">
+                <tr class="loading-row"><td colspan="8">Loading bookings…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── PROMOS ── -->
+        <div id="tab-promos">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem">
+            <button class="btn btn-primary btn-sm" id="open-add-promo-btn">+ Create Promo Code</button>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><div class="table-title" id="promos-table-title">Promo Codes</div></div>
+            <table class="data-table">
+              <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Used</th><th>Valid Until</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="promos-tbody">
+                <tr class="loading-row"><td colspan="7">Loading promo codes…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── ANALYTICS ── -->
+        <div id="tab-analytics">
+          <div class="analytics-grid" style="margin-bottom:1.5rem">
+            <div class="analytics-card amber"><div class="analytics-label">Monthly Revenue</div><div class="analytics-val" id="an-revenue"><span class="stat-loading">…</span></div></div>
+            <div class="analytics-card green"><div class="analytics-label">Total Bookings</div><div class="analytics-val" id="an-bookings"><span class="stat-loading">…</span></div></div>
+            <div class="analytics-card blue"><div class="analytics-label">Registered Users</div><div class="analytics-val" id="an-users"><span class="stat-loading">…</span></div></div>
+            <div class="analytics-card red"><div class="analytics-label">Pending Approvals</div><div class="analytics-val" id="an-pending"><span class="stat-loading">…</span></div></div>
+          </div>
+          <div class="dash-grid-2">
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Bookings per Day</div></div>
+              <div class="chart-area"><div class="bar-chart" id="bookings-chart"></div></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><div class="chart-title">Revenue per Day</div></div>
+              <div class="chart-area"><div class="bar-chart" id="rev-chart"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SETTINGS ── -->
+        <div id="tab-settings">
+          <div class="card" style="max-width:700px;width:100%;box-sizing:border-box">
+            <div class="settings-section">
+              <h3>General</h3>
+              <div class="settings-row">
+                <div class="settings-row-info"><h4>Maintenance Mode</h4><p>Temporarily disable booking for all users</p></div>
+                <label class="toggle"><input type="checkbox" id="toggle-maintenance"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info"><h4>New Registrations</h4><p>Allow new users to sign up</p></div>
+                <label class="toggle"><input type="checkbox" id="toggle-registrations" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info"><h4>Email Notifications</h4><p>Send booking confirmation emails</p></div>
+                <label class="toggle"><input type="checkbox" id="toggle-emails" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+              </div>
+            </div>
+            <div class="settings-section">
+              <h3>Pricing</h3>
+              <div class="settings-row">
+                <div class="settings-row-info"><h4>Platform Tax Rate</h4><p>Applied to all bookings</p></div>
+                <div style="display:flex;align-items:center;gap:.5rem"><input type="number" class="form-input" id="tax-rate" value="10" style="width:70px;text-align:center"> <span style="color:var(--muted)">%</span></div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-row-info"><h4>Platform Commission</h4><p>Fee charged to parking owners per booking</p></div>
+                <div style="display:flex;align-items:center;gap:.5rem"><input type="number" class="form-input" id="commission-rate" value="15" style="width:70px;text-align:center"> <span style="color:var(--muted)">%</span></div>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="save-settings-btn">Save Settings</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Add Parking Modal ── -->
+<div class="modal-overlay" id="add-parking-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Parking Lot</div>
+      <button class="modal-close" data-modal-close="add-parking-modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <div class="form-group"><label class="form-label">Parking Name</label><input type="text" class="form-input" placeholder="e.g. Central Park Garage" id="new-parking-name"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">City</label><input type="text" class="form-input" placeholder="City" id="new-parking-city"></div>
+        <div class="form-group"><label class="form-label">State</label><input type="text" class="form-input" placeholder="State" id="new-parking-state"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Address</label><input type="text" class="form-input" placeholder="Full address" id="new-parking-address"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Total Slots</label><input type="number" class="form-input" placeholder="100" id="new-parking-slots"></div>
+        <div class="form-group"><label class="form-label">Price / Hour (₹)</label><input type="number" class="form-input" placeholder="50" step="0.50" id="new-parking-price"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assign Owner</label>
+        <select class="form-select" id="new-parking-owner">
+          <option value="">Loading owners…</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-modal-close="add-parking-modal">Cancel</button>
+      <button class="btn btn-primary" id="submit-add-parking-btn">Add Lot</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Promo Modal ── -->
+<div class="modal-overlay" id="add-promo-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create Promo Code</div>
+      <button class="modal-close" data-modal-close="add-promo-modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-input" placeholder="SUMMER25" id="promo-code-input" style="text-transform:uppercase"></div>
+      <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" placeholder="e.g. Welcome discount" id="promo-desc-input"></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Discount Type</label><select class="form-select" id="promo-type-input"><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (₹)</option></select></div>
+        <div class="form-group"><label class="form-label">Value</label><input type="number" class="form-input" placeholder="25" id="promo-value-input"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Max Discount (₹)</label><input type="number" class="form-input" placeholder="Leave blank for none" id="promo-maxdiscount-input"></div>
+        <div class="form-group"><label class="form-label">Max Uses</label><input type="number" class="form-input" placeholder="Blank = unlimited" id="promo-maxuses-input"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Valid From</label><input type="date" class="form-input" id="promo-from-input"></div>
+        <div class="form-group"><label class="form-label">Valid Until</label><input type="date" class="form-input" id="promo-until-input"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-modal-close="add-promo-modal">Cancel</button>
+      <button class="btn btn-primary" id="submit-add-promo-btn">Create Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── User Detail Modal ── -->
+<div class="modal-overlay" id="user-detail-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">User Details</div>
+      <button class="modal-close" data-modal-close="user-detail-modal"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--bg2);border-radius:8px">
+        <div class="avatar" style="width:48px;height:48px;font-size:1.1rem;background:rgba(245,166,35,.15);color:var(--amber)" id="ud-avatar">?</div>
+        <div>
+          <div style="font-weight:600" id="ud-name">—</div>
+          <div style="font-size:.8rem;color:var(--muted)" id="ud-email">—</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div style="padding:.75rem;background:var(--bg2);border-radius:8px">
+          <div style="font-size:.7rem;color:var(--muted)">Role</div>
+          <div style="font-weight:500" id="ud-role">—</div>
+        </div>
+        <div style="padding:.75rem;background:var(--bg2);border-radius:8px">
+          <div style="font-size:.7rem;color:var(--muted)">Joined</div>
+          <div style="font-weight:500" id="ud-joined">—</div>
+        </div>
+        <div style="padding:.75rem;background:var(--bg2);border-radius:8px">
+          <div style="font-size:.7rem;color:var(--muted)">Bookings</div>
+          <div style="font-weight:500" id="ud-bk">—</div>
+        </div>
+        <div style="padding:.75rem;background:var(--bg2);border-radius:8px">
+          <div style="font-size:.7rem;color:var(--muted)">Phone</div>
+          <div style="font-weight:500" id="ud-phone">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" data-modal-close="user-detail-modal">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/admin.js"></script>
+</body>
+</html>
