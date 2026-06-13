@@ -70,6 +70,28 @@
   }
   .nav-links a:hover { color: var(--text); }
 
+  .nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+  }
+  .nav-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: transform .25s, opacity .25s;
+  }
+  .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.open span:nth-child(2) { opacity: 0; }
+  .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
   .btn-nav {
   background: var(--amber);
   color: #0a0a0a !important;
@@ -477,6 +499,21 @@
     .how-inner { grid-template-columns: 1fr; }
     .footer-top { grid-template-columns: 1fr 1fr; }
     .nav-links { display: none; }
+    .nav-links.open {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.1rem;
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: rgba(10,10,10,0.97);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 5vw;
+      z-index: 250;
+    }
+    .nav-links.open .btn-nav { width: 100%; text-align: center; }
+    .nav-toggle { display: flex; }
   }
 </style>
 </head>
@@ -488,13 +525,16 @@
     <div class="logo-dot"></div>
     Park<span>IQ</span>
   </a>
-  <div class="nav-links">
+  <div class="nav-links" id="nav-links">
     <a href="#features">Features</a>
     <a href="#how">How it works</a>
     <a href="#pricing">Pricing</a>
     <a href="pages/login.html" class="btn-nav" data-auth="guest">Sign in</a>
     <a href="pages/admin-login.html" class="btn-nav" id="nav-admin-btn">Admin</a>
   </div>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" onclick="document.getElementById('nav-links').classList.toggle('open');this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
 <!-- HERO -->

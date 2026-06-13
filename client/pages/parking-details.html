@@ -46,6 +46,10 @@
 .hours-row:last-child{border-bottom:none}
 .hours-day{color:var(--muted)}
 .hours-time{color:var(--text)}
+.skeleton{background:var(--bg3);border-radius:4px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.error-state{text-align:center;padding:4rem 2rem;color:var(--muted)}
+.error-state h2{color:var(--text);margin-bottom:.5rem}
 @media(max-width:900px){.detail-body{grid-template-columns:1fr}.detail-sticky{position:static}}
 </style>
 </head>
@@ -76,14 +80,16 @@
     </button>
     <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
       <div>
-        <h1 id="detail-name" style="font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.3rem" id="detail-name">Parking Location</h1>
+        <h1 id="detail-name" style="font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.3rem">
+          <span class="skeleton" style="display:inline-block;width:260px;height:2rem;">&nbsp;</span>
+        </h1>
         <p id="detail-address" style="color:var(--muted);font-size:.9rem;display:flex;align-items:center;gap:5px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Rajpur Road, Near Clock Tower, Dehradun, Uttarakhand 248001
+          <span class="skeleton" style="display:inline-block;width:200px;height:.9rem;">&nbsp;</span>
         </p>
       </div>
       <div style="display:flex;gap:.5rem">
-        <button class="btn btn-outline btn-sm" onclick="toggleFavorite(this)">
+        <button class="btn btn-outline btn-sm" id="btn-save" onclick="toggleFavorite(this)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           Save
         </button>
@@ -98,55 +104,45 @@
 
 <div class="detail-body">
   <div class="detail-main">
-    <!-- Overview -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem">
-      <div class="card" style="text-align:center">
-        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)" id="stat-avail">45</div>
-        <div style="font-size:.75rem;color:var(--muted)">Spots free</div>
-      </div>
-      <div class="card" style="text-align:center">
-        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">150</div>
-        <div style="font-size:.75rem;color:var(--muted)">Total slots</div>
-      </div>
-      <div class="card" style="text-align:center">
-        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)">★ 4.5</div>
-        <div style="font-size:.75rem;color:var(--muted)">128 reviews</div>
-      </div>
-      <div class="card" style="text-align:center">
-        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">0.3km</div>
-        <div style="font-size:.75rem;color:var(--muted)">From you</div>
-      </div>
+    <!-- Overview stats -->
+    <div id="stats-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem">
+      <div class="card" style="text-align:center"><div class="skeleton" style="height:1.6rem;margin-bottom:.4rem">&nbsp;</div><div style="font-size:.75rem;color:var(--muted)">Spots free</div></div>
+      <div class="card" style="text-align:center"><div class="skeleton" style="height:1.6rem;margin-bottom:.4rem">&nbsp;</div><div style="font-size:.75rem;color:var(--muted)">Total slots</div></div>
+      <div class="card" style="text-align:center"><div class="skeleton" style="height:1.6rem;margin-bottom:.4rem">&nbsp;</div><div style="font-size:.75rem;color:var(--muted)">Rating</div></div>
+      <div class="card" style="text-align:center"><div class="skeleton" style="height:1.6rem;margin-bottom:.4rem">&nbsp;</div><div style="font-size:.75rem;color:var(--muted)">Distance</div></div>
     </div>
 
     <!-- Description -->
     <div class="card" style="margin-bottom:1.5rem">
       <h3 style="margin-bottom:.75rem">About this parking</h3>
-      <p style="color:var(--muted);font-size:.9rem">Premium covered parking in the heart of downtown with 24/7 security and EV charging stations. Perfect for both short visits and all-day parking. The facility features state-of-the-art CCTV, on-site staff, and climate-controlled covered bays.</p>
+      <p id="detail-description" style="color:var(--muted);font-size:.9rem">
+        <span class="skeleton" style="display:block;height:.9rem;margin-bottom:.4rem">&nbsp;</span>
+        <span class="skeleton" style="display:block;height:.9rem;margin-bottom:.4rem;width:80%">&nbsp;</span>
+        <span class="skeleton" style="display:block;height:.9rem;width:60%">&nbsp;</span>
+      </p>
     </div>
 
     <!-- Features -->
     <div class="card" style="margin-bottom:1.5rem">
-      <h3 style="margin-bottom:.75rem">Facilities & Features</h3>
-      <div class="feature-grid">
-        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>EV Charging</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Covered Parking</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>24/7 Security</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>CCTV</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>24 Hours Open</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Handicap Spots</div>
-        <div class="feature-item inactive"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Car Wash</div>
-        <div class="feature-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7"/><path d="M9 22V12h6v10"/></svg>Elevator Access</div>
+      <h3 style="margin-bottom:.75rem">Facilities &amp; Features</h3>
+      <div class="feature-grid" id="feature-grid">
+        <!-- populated by JS -->
+        <div class="skeleton" style="height:42px;border-radius:var(--radius-sm)">&nbsp;</div>
+        <div class="skeleton" style="height:42px;border-radius:var(--radius-sm)">&nbsp;</div>
+        <div class="skeleton" style="height:42px;border-radius:var(--radius-sm)">&nbsp;</div>
+        <div class="skeleton" style="height:42px;border-radius:var(--radius-sm)">&nbsp;</div>
       </div>
     </div>
 
     <!-- Slot map -->
     <div class="card" style="margin-bottom:1.5rem">
       <div class="flex-between" style="margin-bottom:.75rem">
-        <h3>Slot Map — Ground Floor</h3>
+        <h3>Slot Map</h3>
         <div style="display:flex;gap:.75rem;font-size:.72rem;color:var(--muted)">
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(76,175,80,.2);display:inline-block"></span>Free</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.06);display:inline-block"></span>Taken</span>
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,.2);display:inline-block"></span>EV</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:rgba(168,85,247,.2);display:inline-block"></span>Handicap</span>
         </div>
       </div>
       <div class="slot-grid" id="slot-grid"></div>
@@ -156,10 +152,7 @@
     <!-- Hours -->
     <div class="card" style="margin-bottom:1.5rem">
       <h3 style="margin-bottom:.75rem">Operating Hours</h3>
-      <div class="hours-grid">
-        <div><div class="hours-row"><span class="hours-day">Monday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Tuesday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Wednesday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Thursday</span><span class="hours-time">Open 24hr</span></div></div>
-        <div><div class="hours-row"><span class="hours-day">Friday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Saturday</span><span class="hours-time">Open 24hr</span></div><div class="hours-row"><span class="hours-day">Sunday</span><span class="hours-time">Open 24hr</span></div></div>
-      </div>
+      <div id="hours-container"></div>
     </div>
 
     <!-- Reviews -->
@@ -168,41 +161,17 @@
         <div>
           <h3>Reviews</h3>
           <div style="display:flex;align-items:center;gap:8px;margin-top:.3rem">
-            <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--amber)">4.5</div>
+            <div id="review-rating-big" style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--amber)">—</div>
             <div>
-              <div style="display:flex;gap:2px">
-                ${[1,2,3,4,5].map(i => `<svg width="14" height="14" viewBox="0 0 24 24" style="fill:${i<=4?'var(--amber)':'rgba(245,166,35,.3)'};stroke:none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}
-              </div>
-              <div style="font-size:.72rem;color:var(--muted)">128 reviews</div>
+              <div id="review-stars-big" style="display:flex;gap:2px"></div>
+              <div id="review-count-label" style="font-size:.72rem;color:var(--muted)">— reviews</div>
             </div>
           </div>
         </div>
       </div>
       <div id="reviews-list">
-        <div class="review-item">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
-            <div class="review-stars">${[1,2,3,4,5].map(()=>`<svg class="review-star" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}</div>
-            <span style="font-size:.72rem;color:var(--muted)">2 days ago</span>
-          </div>
-          <div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">Excellent Service!</div>
-          <p class="review-text">Very clean and well-maintained parking. The EV charging stations work perfectly. Staff was very helpful.</p>
-          <div class="review-author">
-            <div class="avatar avatar-sm">AB</div>
-            <div><div style="font-weight:500">Alice Brown</div><span class="badge badge-green" style="margin-left:4px">Verified</span></div>
-          </div>
-        </div>
-        <div class="review-item">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
-            <div class="review-stars">${[1,2,3,4,5].map(i=>`<svg class="review-star" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`).join('')}</div>
-            <span style="font-size:.72rem;color:var(--muted)">1 week ago</span>
-          </div>
-          <div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">Always Reliable</div>
-          <p class="review-text">I use this parking regularly. Never had any issues. Great security and always clean. The QR entry system saves so much time.</p>
-          <div class="review-author">
-            <div class="avatar avatar-sm">BD</div>
-            <div><div style="font-weight:500">Bob Davis</div><span class="badge badge-green" style="margin-left:4px">Verified</span></div>
-          </div>
-        </div>
+        <div class="skeleton" style="height:100px;border-radius:var(--radius-sm);margin-bottom:1rem">&nbsp;</div>
+        <div class="skeleton" style="height:100px;border-radius:var(--radius-sm)">&nbsp;</div>
       </div>
     </div>
   </div>
@@ -212,12 +181,12 @@
     <div class="book-card">
       <div class="flex-between" style="margin-bottom:1rem">
         <div>
-          <div class="price-big">₹650<span class="price-unit">/hr</span></div>
-          <div style="font-size:.78rem;color:var(--muted);margin-top:2px">₹3,750/day</div>
+          <div class="price-big" id="book-price">₹—<span class="price-unit">/hr</span></div>
+          <div id="book-price-day" style="font-size:.78rem;color:var(--muted);margin-top:2px"></div>
         </div>
         <div style="text-align:right">
-          <div class="badge badge-green" style="margin-bottom:4px">Open Now</div>
-          <div style="font-size:.72rem;color:var(--muted)">45 of 150 free</div>
+          <div id="book-open-badge" class="badge" style="margin-bottom:4px">—</div>
+          <div id="book-slots-label" style="font-size:.72rem;color:var(--muted)"></div>
         </div>
       </div>
 
@@ -258,81 +227,373 @@
 
 <script src="../js/app.js"></script>
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-const parkingId      = urlParams.get('id') || '';
-const parkingName    = urlParams.get('name')    || 'Parking Location';
-const parkingAddress = urlParams.get('address') || '';
-const parkingPrice   = parseInt(urlParams.get('price')) || 0;
-
-// Set title and address from URL params
-const detailName = document.getElementById('detail-name');
-const detailAddr = document.getElementById('detail-address');
-if (detailName) detailName.textContent = parkingName;
-if (detailAddr) detailAddr.innerHTML   = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${parkingAddress}`;
-
-document.getElementById('detail-book-btn').href = `booking.html?id=${parkingId}&name=${encodeURIComponent(parkingName)}&address=${encodeURIComponent(parkingAddress)}&price=${parkingPrice}`;
-
-// Generate slot map
-const slotGrid = document.getElementById('slot-grid');
-const slots = [];
-for(let i=1;i<=40;i++){
-  let type='available', label='A'+i;
-  if(i<=3){type='slot-handicap';label='H'+i;}
-  else if(i>=4&&i<=8){type='slot-ev';label='E'+(i-3);}
-  else if(Math.random()<0.35){type='slot-occupied';}
-  slots.push({label,type});
-}
-slotGrid.innerHTML = slots.map(s=>`<div class="slot-cell slot-${s.type==='available'?'available':s.type}" onclick="selectSlot(this,'${s.label}')">${s.label}</div>`).join('');
-
+/* ── State ── */
+let parkingData = null;
 let selectedSlot = null;
-function selectSlot(el, label){
-  if(el.classList.contains('slot-occupied')) return;
-  document.querySelectorAll('.slot-cell').forEach(c=>c.classList.remove('slot-selected'));
-  el.classList.add('slot-selected');
-  selectedSlot = label;
-  toast(`Slot ${label} selected`, 'success');
+const urlParams  = new URLSearchParams(window.location.search);
+const parkingId  = urlParams.get('id') || '';
+
+/* ── Helpers ── */
+function starSVG(filled) {
+  const c = filled ? 'var(--amber)' : 'rgba(245,166,35,.25)';
+  return `<svg width="14" height="14" viewBox="0 0 24 24" style="fill:${c};stroke:none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+}
+function renderStars(rating, max = 5) {
+  return Array.from({length: max}, (_, i) => starSVG(i < Math.round(rating))).join('');
+}
+function timeAgo(dateStr) {
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 3600)   return Math.floor(diff/60) + ' min ago';
+  if (diff < 86400)  return Math.floor(diff/3600) + ' hr ago';
+  if (diff < 604800) return Math.floor(diff/86400) + ' days ago';
+  if (diff < 2592000)return Math.floor(diff/604800) + ' weeks ago';
+  return Math.floor(diff/2592000) + ' months ago';
+}
+function initials(first, last) {
+  return ((first||'?')[0] + (last||'?')[0]).toUpperCase();
+}
+function fmt12(timeStr) {
+  if (!timeStr) return '—';
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
-// Date estimation
-function setDefaultDates(){
+/* ── Fetch & render ── */
+async function loadParkingDetails() {
+  if (!parkingId) { showError('No parking ID provided.'); return; }
+  try {
+    const res  = await fetch(`/api/parking/${parkingId}`);
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.message || 'Not found');
+    parkingData = json.data;
+    renderAll(parkingData);
+    // Check if user already has an active/confirmed/paid booking for this parking
+    await checkExistingBooking();
+  } catch (err) {
+    showError(err.message || 'Could not load parking details.');
+  }
+}
+
+async function checkExistingBooking() {
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) return; // Not logged in, show normal book button
+    const res = await fetch('/api/bookings/my-bookings?limit=100', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const json = await res.json();
+    const bookings = json.data || [];
+    // Find a booking for this parking that is active, confirmed, completed, no_show, or paid+pending
+    const existing = bookings.find(b => {
+      const pid = b.parking?.id || b.parkingId;
+      if (String(pid) !== String(parkingId)) return false;
+      const s = (b.status || '').trim().toLowerCase();
+      const ps = (b.paymentStatus || '').trim().toLowerCase();
+      return s === 'active' || s === 'confirmed' || s === 'completed' || s === 'no_show' ||
+             (s === 'pending' && ps === 'paid');
+    });
+    if (!existing) return;
+    // Show existing booking notice instead of book button
+    const btn = document.getElementById('detail-book-btn');
+    const card = btn ? btn.closest('.book-card') : null;
+    if (!btn) return;
+
+    const s = (existing.status || '').trim().toLowerCase();
+    let statusLabel, badgeColor, subText, showViewBtn = true;
+    if (s === 'active') {
+      statusLabel = 'Active';
+      badgeColor  = 'var(--success)';
+      subText     = 'Your session is currently in progress.';
+    } else if (s === 'confirmed') {
+      statusLabel = 'Confirmed';
+      badgeColor  = '#3B82F6';
+      subText     = 'Your booking is confirmed and paid.';
+    } else if (s === 'completed') {
+      statusLabel = 'Completed';
+      badgeColor  = 'var(--muted)';
+      subText     = 'Your previous booking here is completed.';
+      showViewBtn = false; // allow re-booking for completed ones — fall through to book button
+    } else if (s === 'no_show') {
+      statusLabel = 'No Show';
+      badgeColor  = 'var(--danger)';
+      subText     = 'You missed your previous session here.';
+      showViewBtn = false; // allow re-booking after a no_show
+    } else {
+      statusLabel = 'Booked';
+      badgeColor  = '#3B82F6';
+      subText     = 'You have a pending booking here.';
+    }
+
+    // For completed/no_show — don't block re-booking, just return
+    if (!showViewBtn) return;
+
+    btn.outerHTML = `
+      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem;text-align:center;border:1.5px solid var(--border)">
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">You already have a booking here</div>
+        <span style="display:inline-block;padding:.25rem .75rem;border-radius:999px;font-size:.78rem;font-weight:600;background:${badgeColor}20;color:${badgeColor};margin-bottom:.75rem">${statusLabel}</span>
+        <div style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem">${subText}</div>
+        <div style="font-size:.82rem;font-weight:600;margin-bottom:.85rem">${existing.bookingCode || ''}</div>
+        <a href="booking-history.html" class="btn btn-outline btn-lg w-full" style="justify-content:center">View my booking →</a>
+      </div>`;
+    // Hide the date inputs since they don't need to re-book
+    const inputs = card ? card.querySelectorAll('.form-group') : [];
+    inputs.forEach(el => el.style.display = 'none');
+    const estimate = document.getElementById('detail-estimate');
+    if (estimate) estimate.style.display = 'none';
+  } catch (e) {
+    // Silently fail — don't block the page if this check fails
+  }
+}
+
+function showError(msg) {
+  document.getElementById('detail-name').textContent = 'Parking not found';
+  document.getElementById('detail-address').textContent = '';
+  document.querySelector('.detail-main').innerHTML = `
+    <div class="error-state">
+      <h2>Oops!</h2>
+      <p>${msg}</p>
+      <a href="map.html" class="btn btn-primary" style="margin-top:1rem">Back to map</a>
+    </div>`;
+  document.querySelector('.detail-sticky').innerHTML = '';
+}
+
+function renderAll(p) {
+  /* Hero */
+  document.title = `${p.name} — ParkIQ`;
+  document.getElementById('detail-name').textContent = p.name;
+  document.getElementById('detail-address').innerHTML =
+    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+     ${p.address}${p.city ? ', '+p.city : ''}${p.state ? ', '+p.state : ''}`;
+
+  /* Stats row */
+  getUserDistance(p.latitude, p.longitude, distKm => {
+    document.getElementById('stats-row').innerHTML = `
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)">${p.availableSlots}</div>
+        <div style="font-size:.75rem;color:var(--muted)">Spots free</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">${p.totalSlots}</div>
+        <div style="font-size:.75rem;color:var(--muted)">Total slots</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)">★ ${parseFloat(p.rating).toFixed(1)}</div>
+        <div style="font-size:.75rem;color:var(--muted)">${p.totalReviews} reviews</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800">${distKm !== null ? distKm+'km' : '—'}</div>
+        <div style="font-size:.75rem;color:var(--muted)">From you</div>
+      </div>`;
+  });
+
+  /* Description */
+  document.getElementById('detail-description').textContent =
+    p.description || 'No description provided.';
+
+  /* Features */
+  const features = [
+    { key: 'hasEVCharging',    label: 'EV Charging',    icon: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>' },
+    { key: 'isCovered',        label: 'Covered Parking', icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' },
+    { key: 'hasSecurity',      label: '24/7 Security',  icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+    { key: 'hasCCTV',          label: 'CCTV',           icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>' },
+    { key: 'is24Hours',        label: 'Open 24 Hours',  icon: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>' },
+    { key: 'hasHandicapSpots', label: 'Handicap Spots', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  ];
+  document.getElementById('feature-grid').innerHTML = features.map(f => {
+    const active = !!p[f.key];
+    return `<div class="feature-item${active?'':' inactive'}">
+      <svg viewBox="0 0 24 24">${f.icon}</svg>${f.label}
+    </div>`;
+  }).join('');
+
+  /* Slot map */
+  renderSlots(p.slots || []);
+
+  /* Hours */
+  renderHours(p);
+
+  /* Booking card */
+  document.getElementById('book-price').innerHTML =
+    `₹${Math.round(p.pricePerHour)}<span class="price-unit">/hr</span>`;
+  if (p.pricePerDay) {
+    document.getElementById('book-price-day').textContent =
+      `₹${Math.round(p.pricePerDay)}/day`;
+  }
+  const badge = document.getElementById('book-open-badge');
+  if (p.isOpen) {
+    badge.textContent = 'Open Now';
+    badge.className   = 'badge badge-green';
+  } else {
+    badge.textContent = 'Closed';
+    badge.className   = 'badge badge-red';
+  }
+  document.getElementById('book-slots-label').textContent =
+    `${p.availableSlots} of ${p.totalSlots} free`;
+
+  /* Reviews */
+  document.getElementById('review-rating-big').textContent =
+    parseFloat(p.rating).toFixed(1);
+  document.getElementById('review-stars-big').innerHTML =
+    renderStars(p.rating);
+  document.getElementById('review-count-label').textContent =
+    `${p.totalReviews} reviews`;
+  renderReviews(p.recentReviews || []);
+
+  /* Dates & booking btn */
+  setDefaultDates();
+  updateBookingBtn();
+}
+
+function renderSlots(slots) {
+  const grid = document.getElementById('slot-grid');
+  if (!slots.length) {
+    grid.innerHTML = '<p style="color:var(--muted);font-size:.8rem;grid-column:1/-1">No slot data available.</p>';
+    return;
+  }
+  grid.innerHTML = slots.map(s => {
+    let cls = 'slot-available';
+    if (s.status === 'occupied' || s.status === 'reserved') cls = 'slot-occupied';
+    else if (s.type === 'ev')       cls = 'slot-ev';
+    else if (s.type === 'handicap') cls = 'slot-handicap';
+    const label = s.slotNumber || s.id;
+    return `<div class="slot-cell ${cls}" data-slot-id="${s.id}" data-label="${label}"
+               onclick="selectSlot(this)">${label}</div>`;
+  }).join('');
+}
+
+function selectSlot(el) {
+  if (el.classList.contains('slot-occupied')) return;
+  document.querySelectorAll('.slot-cell').forEach(c => c.classList.remove('slot-selected'));
+  el.classList.add('slot-selected');
+  selectedSlot = el.dataset.label;
+  if (typeof toast === 'function') toast(`Slot ${selectedSlot} selected`, 'success');
+}
+
+function renderHours(p) {
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  let hoursText;
+  if (p.is24Hours) {
+    hoursText = 'Open 24 Hours';
+  } else {
+    hoursText = `${fmt12(p.openingTime)} – ${fmt12(p.closingTime)}`;
+  }
+  const half = Math.ceil(days.length / 2);
+  const col = days => days.map(d => `
+    <div class="hours-row">
+      <span class="hours-day">${d}</span>
+      <span class="hours-time">${hoursText}</span>
+    </div>`).join('');
+  document.getElementById('hours-container').innerHTML = `
+    <div class="hours-grid">
+      <div>${col(days.slice(0, half))}</div>
+      <div>${col(days.slice(half))}</div>
+    </div>`;
+}
+
+function renderReviews(reviews) {
+  const list = document.getElementById('reviews-list');
+  if (!reviews.length) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:.875rem">No reviews yet.</p>';
+    return;
+  }
+  list.innerHTML = reviews.map(r => `
+    <div class="review-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.3rem">
+        <div class="review-stars">${renderStars(r.rating)}</div>
+        <span style="font-size:.72rem;color:var(--muted)">${timeAgo(r.createdAt)}</span>
+      </div>
+      ${r.title ? `<div style="font-weight:500;font-size:.9rem;margin-bottom:.3rem">${r.title}</div>` : ''}
+      <p class="review-text">${r.comment || ''}</p>
+      <div class="review-author">
+        <div class="avatar avatar-sm">${initials(r.user.firstName, r.user.lastName)}</div>
+        <div>
+          <div style="font-weight:500">${r.user.firstName} ${r.user.lastName}</div>
+          ${r.isVerified ? '<span class="badge badge-green" style="margin-left:4px">Verified</span>' : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Distance helper ── */
+function getUserDistance(lat, lng, cb) {
+  if (!navigator.geolocation) { cb(null); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const R = 6371;
+    const dLat = (lat - pos.coords.latitude) * Math.PI / 180;
+    const dLon = (lng - pos.coords.longitude) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 +
+      Math.cos(pos.coords.latitude*Math.PI/180) *
+      Math.cos(lat*Math.PI/180) *
+      Math.sin(dLon/2)**2;
+    cb((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1));
+  }, () => cb(null));
+}
+
+/* ── Booking estimate ── */
+function setDefaultDates() {
   const now = new Date();
   const end = new Date(now.getTime() + 2*60*60*1000);
   const fmt = d => d.toISOString().slice(0,16);
   document.getElementById('detail-start').value = fmt(now);
-  document.getElementById('detail-end').value = fmt(end);
+  document.getElementById('detail-end').value   = fmt(end);
   calcEstimate();
 }
 
-function calcEstimate(){
+function calcEstimate() {
+  if (!parkingData) return;
   const s = new Date(document.getElementById('detail-start').value);
   const e = new Date(document.getElementById('detail-end').value);
-  if(!s||!e||e<=s) return;
-  const hrs = (e-s)/3600000;
-  const base = Math.round(hrs*(parkingPrice||50)*100)/100;
-  const tax  = Math.round(base*.1*100)/100;
-  const total= Math.round((base+tax)*100)/100;
-  document.getElementById('est-dur').textContent  = hrs.toFixed(1)+' hrs';
-  document.getElementById('est-base').textContent = '₹'+Math.round(base);
-  document.getElementById('est-tax').textContent  = '₹'+Math.round(tax);
-  document.getElementById('est-total').textContent= '₹'+Math.round(total);
-  document.getElementById('detail-estimate').style.display='block';
-  const url = `booking.html?id=${parkingId}&name=${encodeURIComponent(parkingName)}&address=${encodeURIComponent(parkingAddress)}&price=${parkingPrice}&start=${encodeURIComponent(s.toISOString())}&end=${encodeURIComponent(e.toISOString())}`;
+  if (!s || !e || e <= s) return;
+  const hrs  = (e - s) / 3600000;
+  const base = Math.round(hrs * parkingData.pricePerHour * 100) / 100;
+  const tax  = Math.round(base * .1 * 100) / 100;
+  const total= Math.round((base + tax) * 100) / 100;
+  document.getElementById('est-dur').textContent   = hrs.toFixed(1) + ' hrs';
+  document.getElementById('est-base').textContent  = '₹' + Math.round(base);
+  document.getElementById('est-tax').textContent   = '₹' + Math.round(tax);
+  document.getElementById('est-total').textContent = '₹' + Math.round(total);
+  document.getElementById('detail-estimate').style.display = 'block';
+  updateBookingBtn();
+}
+
+function updateBookingBtn() {
+  if (!parkingData) return;
+  const s = document.getElementById('detail-start').value;
+  const e = document.getElementById('detail-end').value;
+  const url = `booking.html?id=${parkingData.id}`
+    + `&name=${encodeURIComponent(parkingData.name)}`
+    + `&address=${encodeURIComponent(parkingData.address + (parkingData.city ? ', '+parkingData.city : ''))}`
+    + `&price=${parkingData.pricePerHour}`
+    + (s ? `&start=${encodeURIComponent(new Date(s).toISOString())}` : '')
+    + (e ? `&end=${encodeURIComponent(new Date(e).toISOString())}` : '')
+    + (selectedSlot ? `&slot=${encodeURIComponent(selectedSlot)}` : '');
   document.getElementById('detail-book-btn').href = url;
 }
 
 document.getElementById('detail-start')?.addEventListener('change', calcEstimate);
 document.getElementById('detail-end')?.addEventListener('change', calcEstimate);
 
-function toggleFavorite(btn){
+/* ── Misc ── */
+function toggleFavorite(btn) {
   const saved = btn.classList.toggle('btn-primary');
-  btn.classList.toggle('btn-outline',!saved);
-  toast(saved ? 'Added to saved spots' : 'Removed from saved spots', saved ? 'success' : 'info');
+  btn.classList.toggle('btn-outline', !saved);
+  if (typeof toast === 'function')
+    toast(saved ? 'Added to saved spots' : 'Removed from saved spots', saved ? 'success' : 'info');
 }
-function shareLocation(){
-  navigator.clipboard?.writeText(window.location.href).then(()=>toast('Link copied!','success'));
+function shareLocation() {
+  navigator.clipboard?.writeText(window.location.href)
+    .then(() => { if (typeof toast==='function') toast('Link copied!','success'); });
+}
+function goBack() {
+  if (document.referrer) history.back();
+  else window.location.href = 'map.html';
 }
 
-document.addEventListener('DOMContentLoaded',setDefaultDates);
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', loadParkingDetails);
 </script>
 </body>
 </html>

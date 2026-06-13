@@ -194,3 +194,70 @@
   .analytics-grid { grid-template-columns: 1fr; }
   .analytics-val  { font-size: 1.8rem; }
 }
+/* ── Booking Action Buttons ── */
+.bk-actions-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+.bk-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  padding: .26rem .52rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: .71rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.bk-action-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.bk-view     { color: var(--muted); border-color: var(--border); }
+.bk-view:hover { background: var(--border); color: var(--text); }
+
+.bk-confirm  { color: #10b981; border-color: rgba(16,185,129,.3); }
+.bk-confirm:hover  { background: rgba(16,185,129,.12); }
+
+.bk-checkin  { color: #3b82f6; border-color: rgba(59,130,246,.3); }
+.bk-checkin:hover  { background: rgba(59,130,246,.12); }
+
+.bk-checkout { color: #8b5cf6; border-color: rgba(139,92,246,.3); }
+.bk-checkout:hover { background: rgba(139,92,246,.12); }
+
+.bk-cancel   { color: #ef4444; border-color: rgba(239,68,68,.3); }
+.bk-cancel:hover   { background: rgba(239,68,68,.12); }
+
+/* ── Active badge colour (blue) ── */
+.badge-blue {
+  background: rgba(59,130,246,.14);
+  color: #3b82f6;
+  border: 1px solid rgba(59,130,246,.28);
+}
+
+/* ── Booking Detail Modal ── */
+.detail-tile {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .6rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .18rem;
+}
+.dtile-label {
+  font-size: .67rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.dtile-val {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+}

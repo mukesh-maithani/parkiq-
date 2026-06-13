@@ -83,11 +83,15 @@
       </div>
     </div>
   </aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- ── Main ── -->
   <main class="dash-main">
     <div class="dash-topbar">
-      <div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
         <div class="topbar-title" id="topbar-title">Admin Dashboard</div>
         <div style="font-size:.75rem;color:var(--muted)" id="topbar-sub">Platform overview & management</div>
       </div>
@@ -214,8 +218,9 @@
             <input type="text" class="form-input" placeholder="Search by code, user, parking…" id="booking-search" style="max-width:300px">
             <select class="form-select" id="booking-status-filter" style="width:auto">
               <option value="">All status</option>
-              <option value="active">Active</option>
+              <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
+              <option value="active">Active</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>

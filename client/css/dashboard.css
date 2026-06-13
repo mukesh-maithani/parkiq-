@@ -195,6 +195,23 @@
   .dropdown-item svg   { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
   .dropdown-divider    { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
    
+  /* ── Sidebar toggle (mobile) ── */
+  .sidebar-toggle {
+    display: none;
+    align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 0.5rem;
+    color: var(--text); cursor: pointer; margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+  .sidebar-toggle svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 150;
+  }
+
   /* ── Responsive ── */
   @media (max-width: 1100px) {
     .stat-grid   { grid-template-columns: repeat(2,1fr); }
@@ -203,11 +220,16 @@
   }
    
   @media (max-width: 768px) {
-    .sidebar     { width: 260px; transform: translateX(-100%); transition: transform .3s; }
+    .sidebar     { width: 260px; transform: translateX(-100%); transition: transform .3s; z-index: 200; }
     .sidebar.open { transform: translateX(0); }
     .dash-main   { margin-left: 0; width: 100%; }
-    .dash-topbar { left: 0; }
+    .dash-topbar { left: 0; padding: 0.85rem 1rem; }
+    .topbar-title { font-size: 0.95rem; }
     .stat-grid   { grid-template-columns: 1fr 1fr; }
+    .sidebar-toggle { display: flex; }
+    .sidebar-overlay.show { display: block; }
+    .table-card  { overflow-x: auto; }
+    .data-table  { min-width: 600px; }
   }
    
   @media (max-width: 480px) {
@@ -216,10 +238,10 @@
   }
    
   /* ── Inline badges (role labels, status) ── */
-  .badge-amber { background: rgba(245,158,11,0.18); color: #F5A623; border: 1px solid rgba(245,158,11,0.35); }
-  .badge-green { background: rgba(16,185,129,0.12); color: #10B981; border: 1px solid rgba(16,185,129,0.25); }
-  .badge-muted { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.1); }
-  .badge-red   { background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid rgba(239,68,68,0.25); }
+  .badge-amber { background: rgba(245,158,11,0.18); color: #B45309; border: 1px solid rgba(245,158,11,0.35); }
+  .badge-green { background: rgba(16,185,129,0.12); color: #047857; border: 1px solid rgba(16,185,129,0.25); }
+  .badge-muted { background: rgba(100,116,139,0.12); color: #475569; border: 1px solid rgba(100,116,139,0.25); }
+  .badge-red   { background: rgba(239,68,68,0.12); color: #DC2626; border: 1px solid rgba(239,68,68,0.25); }
 
   /* Role chip near logo */
   .role-chip {

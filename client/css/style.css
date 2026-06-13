@@ -1789,6 +1789,20 @@ p {
         display: none;
     }
 
+    .nav .nav-links {
+        display: flex !important;
+        gap: 0.75rem;
+    }
+
+    .nav .nav-links a {
+        font-size: 0.75rem;
+        white-space: nowrap;
+    }
+
+    .nav {
+        padding: 0.85rem 1rem;
+    }
+
     .nav-toggle {
         display: block;
     }

@@ -204,14 +204,49 @@ exports.createBooking = async (req, res, next) => {
     }
 };
 
+// Get user's booking stats (total, hours, spent, active)
+exports.getUserStats = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+
+        const [stats] = await query(`
+            SELECT
+                COUNT(*) AS totalBookings,
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN duration_hours ELSE 0 END), 0) AS totalHours,
+                COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total_amount ELSE 0 END), 0) AS totalSpent,
+                COUNT(CASE WHEN status IN ('active', 'confirmed') THEN 1 END) AS activeBookings
+            FROM bookings
+            WHERE user_id = ?
+        `, [userId]);
+
+        const savedSpots = await query(
+            `SELECT COUNT(*) AS cnt FROM saved_parkings WHERE user_id = ?`,
+            [userId]
+        ).catch(() => [{ cnt: 0 }]);
+
+        res.json({
+            success: true,
+            data: {
+                totalBookings: stats.totalBookings || 0,
+                totalHours: parseFloat(stats.totalHours) || 0,
+                totalSpent: parseFloat(stats.totalSpent) || 0,
+                activeBookings: stats.activeBookings || 0,
+                savedSpots: savedSpots[0]?.cnt || 0
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Get user's bookings
 exports.getUserBookings = async (req, res, next) => {
     try {
         const userId = req.params.userId || req.user.id;
         const { status, page = 1, limit = 10 } = req.query;
         
-        // Authorization check
-        if (req.user.id !== parseInt(userId)) {
+        // Authorization check — compare as numbers to avoid string/int mismatch
+        if (parseInt(req.user.id) !== parseInt(userId)) {
             return res.status(403).json({
                 success: false,
                 message: 'Access denied'
@@ -271,8 +306,8 @@ exports.getUserBookings = async (req, res, next) => {
                     discountAmount: parseFloat(b.discount_amount),
                     totalAmount: parseFloat(b.total_amount)
                 },
-                status: b.status,
-                paymentStatus: b.payment_status,
+                status: (b.status || '').trim().toLowerCase(),
+                paymentStatus: (b.payment_status || '').trim().toLowerCase(),
                 qrCode: b.qr_code,
                 createdAt: b.created_at
             })),
@@ -543,6 +578,19 @@ exports.getParkingBookings = async (req, res, next) => {
             });
         }
         
+        // Auto-cancel bookings that have been awaiting payment for more than 30 minutes
+        await query(`
+            UPDATE bookings
+            SET status = 'cancelled',
+                cancelled_at = NOW(),
+                cancellation_reason = 'Payment not completed within 30 minutes',
+                updated_at = NOW()
+            WHERE parking_id = ?
+              AND status = 'pending'
+              AND payment_status = 'pending'
+              AND created_at < (NOW() - INTERVAL 30 MINUTE)
+        `, [parkingId]);
+
         const offset = (page - 1) * limit;
         
         let sql = `
@@ -591,9 +639,12 @@ exports.getParkingBookings = async (req, res, next) => {
                 vehicleType: b.vehicle_type,
                 startTime: b.start_time,
                 endTime: b.end_time,
+                actualCheckIn: b.actual_check_in,
+                actualCheckOut: b.actual_check_out,
                 totalAmount: parseFloat(b.total_amount),
                 status: b.status,
-                paymentStatus: b.payment_status
+                paymentStatus: b.payment_status,
+                createdAt: b.created_at
             })),
             pagination: {
                 currentPage: parseInt(page),

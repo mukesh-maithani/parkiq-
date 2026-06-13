@@ -77,11 +77,16 @@ const initScheduledJobs = () => {
 `);
 
             // Mark confirmed bookings as no_show if start_time passed by 30 minutes
-            // Get no-show bookings first
+            // Only mark as no_show if payment was NOT completed (unpaid bookings)
+            // Paid bookings that missed check-in are marked completed, not no_show
+            // Only mark as no_show if payment is genuinely unpaid.
+            // Use TRIM + LOWER to guard against DB whitespace/casing issues
+            // that previously caused paid+confirmed bookings to be wrongly no_show'd.
             const noShowBookings = await query(`
     SELECT slot_id
     FROM bookings
-    WHERE status = 'confirmed'
+    WHERE TRIM(LOWER(status)) = 'confirmed'
+    AND TRIM(LOWER(payment_status)) NOT IN ('paid', 'completed')
     AND start_time < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
     AND actual_check_in IS NULL
     AND slot_id IS NOT NULL
@@ -95,12 +100,33 @@ const initScheduledJobs = () => {
                 );
             }
 
-            // Mark bookings as no_show
+            // Mark unpaid bookings as no_show
             await query(`
     UPDATE bookings
     SET status = 'no_show'
-    WHERE status = 'confirmed'
+    WHERE TRIM(LOWER(status)) = 'confirmed'
+    AND TRIM(LOWER(payment_status)) NOT IN ('paid', 'completed')
     AND start_time < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+    AND actual_check_in IS NULL
+`);
+
+            // Mark paid confirmed bookings whose end_time has passed as completed
+            await query(`
+    UPDATE bookings
+    SET status = 'completed', updated_at = NOW()
+    WHERE status = 'confirmed'
+    AND payment_status = 'paid'
+    AND end_time <= NOW()
+`);
+
+            // Mark paid confirmed bookings whose start_time has passed (but not ended) as active
+            await query(`
+    UPDATE bookings
+    SET status = 'active', updated_at = NOW()
+    WHERE status = 'confirmed'
+    AND payment_status = 'paid'
+    AND start_time <= NOW()
+    AND end_time > NOW()
     AND actual_check_in IS NULL
 `);
 

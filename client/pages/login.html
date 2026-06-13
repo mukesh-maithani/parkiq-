@@ -8,82 +8,174 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/style.css">
 <style>
-.auth-page { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; }
+/* ── Auth page layout ── */
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+/* Homepage-style background on the full page */
+.auth-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(99,102,241,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(16,185,129,0.10) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(245,158,11,0.07) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ── Left panel (dark branded side) ── */
 .auth-left {
-  background: var(--bg2); border-right:1px solid var(--border);
-  display:flex; flex-direction:column; justify-content:space-between; padding:3rem;
-  position:relative; overflow:hidden;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 60%, #0f1f35 100%);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 3rem; position: relative; overflow: hidden; z-index: 1;
 }
 .auth-left-bg {
-  position:absolute; inset:0; z-index:0;
-  background-image: linear-gradient(rgba(245,166,35,0.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(245,166,35,0.04) 1px,transparent 1px);
-  background-size:50px 50px;
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(245,166,35,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245,166,35,0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
 }
 .auth-left-glow {
-  position:absolute; bottom:-100px; left:-100px; width:400px; height:400px; z-index:0;
-  background:radial-gradient(circle,rgba(245,166,35,0.1) 0%,transparent 65%);
-  pointer-events:none;
+  position: absolute; bottom: -100px; left: -100px;
+  width: 400px; height: 400px; z-index: 0;
+  background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 65%);
+  pointer-events: none;
 }
-.auth-left-content { position:relative; z-index:1; }
-.auth-left-bottom  { position:relative; z-index:1; }
+/* Extra top glow for depth */
+.auth-left::after {
+  content: '';
+  position: absolute; top: -80px; right: -80px;
+  width: 300px; height: 300px; z-index: 0;
+  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 65%);
+  pointer-events: none;
+}
+.auth-left-content { position: relative; z-index: 1; }
+.auth-left-bottom  { position: relative; z-index: 1; }
+
 .auth-quote {
-  font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800;
-  line-height:1.3; margin:3rem 0 1.5rem;
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  line-height: 1.3; margin: 3rem 0 1.5rem;
   color: #F0EDE6;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-.auth-quote em { color: #F5A623; font-style:normal; }
-.auth-stat-row { display:flex; gap:2rem; margin-top:2rem; }
-.auth-stat-num { font-family:'Syne',sans-serif; font-weight:800; font-size:1.5rem; color:var(--amber); }
-.auth-stat-lbl { font-size:0.75rem; color:#9CA3AF; }
-.auth-testimonial {
-  background:rgba(255,255,255,0.04); border:1px solid var(--border);
-  border-radius:var(--radius-md); padding:1.25rem; margin-top:2rem;
-}
-.auth-testimonial p { font-size:0.875rem; color:var(--muted); font-style:italic; margin-bottom:0.75rem; }
-.auth-testimonial-author { display:flex; align-items:center; gap:10px; }
-.auth-testimonial-author .avatar { width:32px; height:32px; font-size:0.7rem; }
+.auth-quote em { color: #F5A623; font-style: normal; }
 
-.auth-right {
-  display:flex; align-items:center; justify-content:center;
-  padding:3rem 2rem; background:var(--bg);
+.auth-feature-list {
+  display: flex; flex-direction: column; gap: 0.9rem; margin-top: 3rem;
 }
-.auth-form-wrap { width:100%; max-width:420px; }
-.auth-form-wrap h1 { font-size:1.8rem; margin-bottom:0.4rem; }
-.auth-form-wrap .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+.auth-feature-item {
+  font-size: 0.95rem; color: #E5E1D8;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+
+/* ── Right panel — transparent so page bg shows through ── */
+.auth-right {
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem 2rem;
+  background: transparent;
+  position: relative; z-index: 1;
+}
+
+/* Form card — white floating card */
+.auth-form-wrap {
+  width: 100%; max-width: 420px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 40px rgba(99,102,241,0.10), 0 2px 8px rgba(0,0,0,0.06);
+  backdrop-filter: blur(8px);
+}
+.auth-form-wrap h1 {
+  font-size: 1.8rem; margin-bottom: 0.4rem;
+  color: #1e293b;
+}
+.auth-form-wrap .subtitle {
+  color: #64748b; font-size: 0.9rem; margin-bottom: 2rem;
+}
+
+/* Override form-label and form-input to look right on white card */
+.auth-form-wrap .form-label { color: #374151; }
+.auth-form-wrap .form-input {
+  background: #f8fafc;
+  border-color: rgba(148,163,184,0.35);
+  color: #1e293b;
+}
+.auth-form-wrap .form-input:focus {
+  border-color: #6366f1;
+  background: #fff;
+}
+.auth-form-wrap .form-input::placeholder { color: #94a3b8; }
 
 .divider-or {
-  display:flex; align-items:center; gap:1rem; margin:1.5rem 0;
-  color:var(--muted); font-size:0.8rem;
+  display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;
+  color: #94a3b8; font-size: 0.8rem;
 }
-.divider-or::before, .divider-or::after { content:''; flex:1; border-top:1px solid var(--border); }
+.divider-or::before, .divider-or::after {
+  content: ''; flex: 1; border-top: 1px solid rgba(148,163,184,0.3);
+}
 
 .social-btn {
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  width:100%; padding:0.7rem; border:1px solid var(--border); border-radius:var(--radius-sm);
-  background:transparent; color:var(--text); font-size:0.9rem; cursor:pointer;
-  transition:border-color .2s, background .2s; font-family:'DM Sans',sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 0.7rem;
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: var(--radius-sm);
+  background: #fff; color: #1e293b;
+  font-size: 0.9rem; cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  font-family: 'DM Sans', sans-serif;
 }
-.social-btn:hover { border-color:rgba(255,255,255,0.2); background:var(--bg3); }
+.social-btn:hover {
+  border-color: #6366f1;
+  background: #f5f3ff;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.1);
+}
 
-.form-stack { display:flex; flex-direction:column; gap:1.1rem; }
-.pw-wrap { position:relative; }
-.pw-wrap input { padding-right:2.5rem; }
+.form-stack { display: flex; flex-direction: column; gap: 1.1rem; }
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 2.5rem; }
 .password-toggle {
-  position:absolute; right:10px; top:50%; transform:translateY(-50%);
-  background:none; border:none; cursor:pointer; color:var(--muted); display:flex; align-items:center;
-  transition:color .2s;
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: #94a3b8; display: flex; align-items: center; transition: color .2s;
 }
-.password-toggle:hover { color:var(--text); }
+.password-toggle:hover { color: #1e293b; }
 
-.forgot-link { font-size:0.8rem; color:var(--amber); text-align:right; display:block; margin-top:4px; }
-.auth-switch { text-align:center; font-size:0.875rem; color:var(--muted); margin-top:1.5rem; }
-.auth-switch a { color:var(--amber); }
+.forgot-link {
+  font-size: 0.8rem; color: var(--amber);
+  text-align: right; display: block; margin-top: 4px;
+}
+.auth-switch {
+  text-align: center; font-size: 0.875rem; color: #64748b; margin-top: 1.5rem;
+}
+.auth-switch a { color: var(--amber); }
 
-@media (max-width:800px) {
-  .auth-page { grid-template-columns:1fr; }
-  .auth-left  { display:none; }
+/* Back to home link inside white card */
+.auth-form-wrap .back-home-link {
+  border-color: rgba(148,163,184,0.3) !important;
+  color: #64748b !important;
+}
+.auth-form-wrap .back-home-link:hover {
+  border-color: rgba(245,166,35,0.5) !important;
+  color: #f59e0b !important;
+}
+
+@media (max-width: 800px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-left  { display: none; }
+  .auth-right { padding: 2rem 1rem; align-items: flex-start; padding-top: 3rem; }
+  .auth-form-wrap {
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
 }
 </style>
 </head>
@@ -102,43 +194,15 @@
       <div class="auth-quote">
         Your spot is <em>waiting.</em><br>Sign in and park smarter.
       </div>
-      <div class="auth-stat-row">
-  <div>
-    <div class="auth-stat-num" id="stat-locations">0</div>
-    <div class="auth-stat-lbl">Parking locations</div>
-  </div>
-
-  <div>
-    <div class="auth-stat-num" id="stat-users">0</div>
-    <div class="auth-stat-lbl">Happy drivers</div>
-  </div>
-
-  <div>
-    <div class="auth-stat-num" id="stat-rating">0★</div>
-    <div class="auth-stat-lbl">Average rating</div>
-  </div>
-</div>
-    </div>
-
-    <div class="auth-testimonial">
-  <p id="featured-review">
-    Loading review...
-  </p>
-
-  <div class="auth-testimonial-author">
-    <div class="avatar avatar-sm" id="review-avatar">--</div>
-
-    <div>
-      <div id="review-name" style="font-size:.8rem;font-weight:500">
-        Loading...
-      </div>
-
-      <div id="review-location" style="font-size:.7rem;color:var(--muted)">
-        Loading...
+      <div class="auth-feature-list">
+        <div class="auth-feature-item">🚗 Discover parking spaces near your destination in seconds</div>
+        <div class="auth-feature-item">⚡ Reserve your spot before you arrive — no last-minute stress</div>
+        <div class="auth-feature-item">🔒 Fast, secure, and hassle-free online payments</div>
+        <div class="auth-feature-item">📱 Access, manage, and track bookings anytime, anywhere</div>
+        <div class="auth-feature-item">📍 Real-time availability from verified parking locations</div>
+        <div class="auth-feature-item">⭐ Trusted by drivers for a smarter parking experience</div>
       </div>
     </div>
-  </div>
-</div>
   </div>
 
   <!-- Right panel -->
@@ -183,7 +247,7 @@
       </div>
 
       <div style="text-align:center;margin-top:1rem">
-        <a href="../index.html" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:var(--muted);text-decoration:none;padding:.45rem .9rem;border:1px solid var(--border);border-radius:var(--radius-sm);transition:border-color .2s,color .2s" onmouseover="this.style.borderColor='rgba(245,166,35,.5)';this.style.color='var(--amber)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+        <a href="../index.html" class="back-home-link" style="display:inline-flex;align-items:center;gap:.4rem;font-size:.85rem;color:#64748b;text-decoration:none;padding:.45rem .9rem;border:1px solid rgba(148,163,184,0.3);border-radius:var(--radius-sm);transition:border-color .2s,color .2s" onmouseover="this.style.borderColor='rgba(245,166,35,.5)';this.style.color='#f59e0b'" onmouseout="this.style.borderColor='rgba(148,163,184,0.3)';this.style.color='#64748b'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
           Back to Home
         </a>
@@ -194,45 +258,5 @@
 
 <script src="../js/app.js"></script>
 <script src="../js/auth.js"></script>
-<script>
-async function loadLoginStats() {
-  try {
-    const res = await fetch('/api/users/public/login-stats');
-    const data = await res.json();
-
-    document.getElementById('stat-locations').textContent =
-      data.parkingLocations || 0;
-
-    document.getElementById('stat-users').textContent =
-      data.users || 0;
-
-    document.getElementById('stat-rating').textContent =
-      (data.averageRating || 0) + '★';
-
-    if (data.featuredReview) {
-      document.getElementById('featured-review').textContent =
-        `"${data.featuredReview.comment}"`;
-
-      document.getElementById('review-name').textContent =
-        data.featuredReview.name;
-
-      document.getElementById('review-location').textContent =
-        data.featuredReview.location || '';
-
-      document.getElementById('review-avatar').textContent =
-        data.featuredReview.name
-          .split(' ')
-          .map(x => x[0])
-          .join('')
-          .substring(0, 2)
-          .toUpperCase();
-    }
-  } catch (err) {
-    console.error('Failed loading login stats', err);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', loadLoginStats);
-</script>
 </body>
 </html>

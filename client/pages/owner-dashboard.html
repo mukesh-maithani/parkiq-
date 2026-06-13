@@ -256,9 +256,13 @@
         </div>
       </div>
     </aside>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <main class="dash-main">
       <div class="dash-topbar">
+        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div>
           <div class="topbar-title" id="topbar-title">Owner Dashboard</div>
           <div style="font-size:.75rem;color:rgba(255,255,255,0.5)" id="owner-subtitle">Owner Dashboard</div>
@@ -287,7 +291,7 @@
                     style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;color:var(--amber)">₹</div>
                 </div>
                 <div class="stat-card-value" style="color:var(--amber)" id="owner-revenue">₹0.00</div>
-                <div class="stat-card-sub">Platform charges 15% commission</div>
+                <div class="stat-card-sub">Your listed price × hours booked</div>
               </div>
               <div class="stat-card">
                 <div class="flex-between">
@@ -466,12 +470,13 @@
                     <th>Duration</th>
                     <th>Amount</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="owner-bookings-tbody">
                   <tr>
-                    <td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No
-                      bookings yet — users will book your lots once you add them.</td>
+                    <td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">Loading
+                      bookings…</td>
                   </tr>
                 </tbody>
               </table>
@@ -482,19 +487,39 @@
           <div id="tab-revenue">
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem">
               <div class="stat-card">
-                <div class="stat-card-label">This Month</div>
-                <div class="stat-card-value" style="color:var(--amber)">₹0.00</div>
-                <div class="stat-card-sub">After 15% platform fee</div>
+                <div class="stat-card-label">This Month (Your Share)</div>
+                <div class="stat-card-value" style="color:var(--amber)" id="rev-this-month">₹0.00</div>
+                <div class="stat-card-sub">Your listed price × hours booked</div>
               </div>
               <div class="stat-card">
                 <div class="stat-card-label">Pending Payout</div>
-                <div class="stat-card-value">₹0.00</div>
+                <div class="stat-card-value" id="rev-pending-payout">₹0.00</div>
                 <div class="stat-card-sub">Next scheduled payout</div>
               </div>
               <div class="stat-card">
-                <div class="stat-card-label">All Time</div>
-                <div class="stat-card-value">₹0.00</div>
-                <div class="stat-card-sub">All time earnings</div>
+                <div class="stat-card-label">All Time (Your Share)</div>
+                <div class="stat-card-value" id="rev-all-time">₹0.00</div>
+                <div class="stat-card-sub">Total owner earnings</div>
+              </div>
+            </div>
+            <!-- Revenue split breakdown -->
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem">
+              <div style="font-size:.85rem;font-weight:600;margin-bottom:1rem">Payment Split (All Time)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem">
+                  <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Your Earnings</div>
+                  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--amber)" id="rev-split-owner">₹0.00</div>
+                  <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Base parking price (what you listed)</div>
+                </div>
+                <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem">
+                  <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Platform Fee (Admin)</div>
+                  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem" id="rev-split-platform">₹0.00</div>
+                  <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Tax &amp; service charges collected</div>
+                </div>
+              </div>
+              <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:.82rem">
+                <span style="color:var(--muted)">Total collected from users</span>
+                <span style="font-weight:600" id="rev-split-total">₹0.00</span>
               </div>
             </div>
             <div class="dash-grid-2">
@@ -522,7 +547,7 @@
                 </div>
                 <div style="margin-top:1.25rem">
                   <button class="btn btn-outline w-full" style="justify-content:center"
-                    onclick="toast('Bank details updated','success')">Update Bank Account</button>
+                    onclick="openBankModal()">Update Bank Account</button>
                 </div>
               </div>
             </div>
@@ -560,6 +585,21 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Booking Details Modal -->
+  <div class="modal-overlay" id="booking-details-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Booking Details</div>
+        <button class="modal-close" data-modal-close="booking-details-modal"><svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg></button>
+      </div>
+      <div class="modal-body" id="booking-details-body" style="font-size:.875rem;line-height:1.7">
+      </div>
+    </div>
   </div>
 
   <!-- Add Lot Modal -->
@@ -698,6 +738,42 @@
       <div class="modal-footer">
         <button class="btn btn-outline" data-modal-close="add-lot-modal">Cancel</button>
         <button class="btn btn-primary" onclick="submitNewLot()">Submit for Approval</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank Account Modal -->
+  <div class="modal-overlay" id="bank-account-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Update Bank Account</div>
+        <button class="modal-close" data-modal-close="bank-account-modal"><svg viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg></button>
+      </div>
+      <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
+        <p style="font-size:.82rem;color:var(--muted);margin:0">Your payouts will be sent to this account after each completed booking month.</p>
+        <div class="form-group">
+          <label class="form-label">Account Holder Name</label>
+          <input class="form-input" id="bank-holder-name" type="text" placeholder="Full name as on bank records">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input class="form-input" id="bank-name-input" type="text" placeholder="e.g. State Bank of India">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input class="form-input" id="bank-account-input" type="text" placeholder="Enter account number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IFSC Code</label>
+          <input class="form-input" id="bank-ifsc-input" type="text" placeholder="e.g. SBIN0001234" style="text-transform:uppercase">
+        </div>
+        <div id="bank-modal-error" style="color:var(--danger);font-size:.82rem;display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-modal-close="bank-account-modal">Cancel</button>
+        <button class="btn btn-primary" id="bank-save-btn" onclick="saveBankAccount()">Save Details</button>
       </div>
     </div>
   </div>
@@ -959,13 +1035,24 @@
     };
   </script>
   <script>
-    function switchTab(tab, el) {
+    async function switchTab(tab, el) {
       document.querySelectorAll('.tab-panels > div').forEach(p => p.classList.remove('active'));
       document.getElementById('tab-' + tab)?.classList.add('active');
       document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
       if (el) el.classList.add('active');
       const titles = { overview: 'Owner Dashboard', lots: 'My Lots', slots: 'Slot Manager', bookings: 'Bookings', revenue: 'Revenue & Payouts', reviews: 'Customer Reviews' };
       document.getElementById('topbar-title').textContent = titles[tab] || '';
+      if (tab === 'bookings') {
+        await loadOwnerBookingsTable();
+      } else if (tab === 'revenue') {
+        await ensureOwnerBookingsLoaded();
+        renderRevenueTab();
+      } else if (tab === 'overview') {
+        await ensureOwnerBookingsLoaded();
+        updateOwnerStats();
+      } else if (tab === 'reviews') {
+        await loadOwnerReviews();
+      }
     }
 
     function showReplyBox(btn) {
@@ -973,13 +1060,125 @@
       box?.classList.toggle('hidden');
     }
 
+    let ownerReviews = [];
+
+    async function loadOwnerReviews() {
+      const list = document.getElementById('reviews-list');
+      const empty = document.getElementById('reviews-empty');
+      list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">Loading reviews…</div>`;
+      empty.style.display = 'none';
+
+      try {
+        const lotsRes = await api.get('/parking/owner/my-parking');
+        const lots = lotsRes.data || [];
+
+        if (!lots.length) {
+          ownerReviews = [];
+          list.innerHTML = '';
+          empty.style.display = '';
+          return;
+        }
+
+        // Populate lot filter
+        const lotSelect = document.getElementById('review-filter-lot');
+        lotSelect.innerHTML = '<option value="">All Lots</option>' +
+          lots.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+
+        const results = await Promise.all(lots.map(lot =>
+          api.get(`/reviews/${lot.id}?limit=50`)
+            .then(res => (res.data || []).map(r => ({ ...r, lotId: lot.id, lotName: lot.name })))
+            .catch(() => [])
+        ));
+
+        ownerReviews = results.flat();
+        ownerReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        renderOwnerReviews();
+      } catch (err) {
+        console.error('Failed to load reviews:', err);
+        list.innerHTML = '';
+        empty.style.display = '';
+      }
+    }
+
+    function renderOwnerReviews() {
+      const list = document.getElementById('reviews-list');
+      const empty = document.getElementById('reviews-empty');
+      const lotFilter = document.getElementById('review-filter-lot').value;
+      const ratingFilterText = document.getElementById('review-filter-rating').value;
+      const ratingFilter = ratingFilterText.startsWith('All') ? '' : parseInt(ratingFilterText);
+
+      let filtered = ownerReviews.filter(r => {
+        if (lotFilter && String(r.lotId) !== String(lotFilter)) return false;
+        if (ratingFilter && r.rating !== ratingFilter) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+
+      list.innerHTML = filtered.map(r => {
+        const name = ((r.user?.firstName || '') + ' ' + (r.user?.lastName || '')).trim() || 'Anonymous';
+        const initials = ((r.user?.firstName?.[0] || '') + (r.user?.lastName?.[0] || '')).toUpperCase() || '?';
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const date = new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return `
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:.75rem">
+              <div class="avatar avatar-sm">${initials}</div>
+              <div>
+                <div style="font-weight:500;font-size:.9rem">${name}${r.isVerified ? ' <span class="badge badge-green" style="margin-left:4px">Verified</span>' : ''}</div>
+                <div style="font-size:.75rem;color:var(--muted)">${r.lotName} · ${date}</div>
+              </div>
+            </div>
+            <div style="color:var(--amber);font-size:1.1rem;letter-spacing:2px">${stars}</div>
+          </div>
+          ${r.title ? `<div style="font-weight:600;margin-top:.75rem">${r.title}</div>` : ''}
+          ${r.comment ? `<p style="color:var(--muted);font-size:.85rem;margin-top:.4rem;line-height:1.6">${r.comment}</p>` : ''}
+          ${r.ownerReply ? `
+            <div style="margin-top:.75rem;padding:.75rem 1rem;background:var(--bg3);border-radius:var(--radius-sm);font-size:.85rem">
+              <div style="color:var(--amber);font-weight:600;margin-bottom:.25rem">Your reply</div>
+              <div style="color:var(--muted)">${r.ownerReply}</div>
+            </div>` : `
+            <div style="margin-top:.75rem">
+              <button class="btn btn-outline btn-sm" onclick="showReplyBox(this)">Reply</button>
+              <div class="reply-box hidden" style="margin-top:.5rem;display:flex;gap:.5rem">
+                <input type="text" class="form-input" placeholder="Write a reply…" id="reply-input-${r.id}">
+                <button class="btn btn-primary btn-sm" onclick="submitOwnerReply(${r.id})">Send</button>
+              </div>
+            </div>`}
+        </div>`;
+      }).join('');
+    }
+
+    async function submitOwnerReply(reviewId) {
+      const input = document.getElementById(`reply-input-${reviewId}`);
+      const reply = input.value.trim();
+      if (!reply) return;
+      try {
+        await api.patch(`/reviews/${reviewId}/reply`, { reply });
+        const review = ownerReviews.find(r => r.id === reviewId);
+        if (review) review.ownerReply = reply;
+        renderOwnerReviews();
+        toast('Reply posted', 'success');
+      } catch (err) {
+        console.error('Failed to reply:', err);
+        toast(err.message || 'Could not post reply', 'error');
+      }
+    }
+
+    document.getElementById('review-filter-lot').addEventListener('change', renderOwnerReviews);
+    document.getElementById('review-filter-rating').addEventListener('change', renderOwnerReviews);
+
     function buildCharts() {
       const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
-      // Load real bookings from localStorage (set by submitNewLot/bookings flow)
-      const lots = _loadOwnerLots();
-      const bookings = _loadOwnerBookings();
+      const bookings = ownerApiBookings || [];
 
       // Build revenue & booking arrays from actual booking data
       const rev = Array(7).fill(0);
@@ -988,16 +1187,19 @@
       const now = new Date();
 
       bookings.forEach(b => {
-        const d = new Date(b.date);
+        const d = new Date(b.startTime);
+        const amount = b.totalAmount || 0;
+        const isEarned = (b.paymentStatus || '').toLowerCase() === 'paid';
+
         const dayDiff = Math.floor((now - d) / 86400000);
         if (dayDiff >= 0 && dayDiff < 7) {
           const dow = (d.getDay() + 6) % 7; // Mon=0
-          rev[dow] = +(rev[dow] + (b.amount || 0)).toFixed(2);
           bks[dow] = bks[dow] + 1;
+          if (isEarned) rev[dow] = +(rev[dow] + amount).toFixed(2);
         }
         const mDiff = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
-        if (mDiff >= 0 && mDiff < 6) {
-          mrev[5 - mDiff] = +(mrev[5 - mDiff] + (b.amount || 0)).toFixed(2);
+        if (mDiff >= 0 && mDiff < 6 && isEarned) {
+          mrev[5 - mDiff] = +(mrev[5 - mDiff] + amount).toFixed(2);
         }
       });
 
@@ -1045,6 +1247,151 @@
     function _loadOwnerBookings() {
       try { return JSON.parse(localStorage.getItem(_ownerLotKey() + '_bookings')) || []; } catch { return []; }
     }
+
+    /* ── Real bookings (from API) for the Bookings tab ── */
+    let ownerApiBookings = [];
+
+    function ownerBookingStatusBadge(status, paymentStatus) {
+      const s = (status || '').trim().toLowerCase();
+      const ps = (paymentStatus || '').trim().toLowerCase();
+
+      // 5-state model for owners:
+      // pending    -> payment not completed yet
+      // confirmed  -> paid, not checked in
+      // active     -> checked in
+      // completed  -> checked out
+      // cancelled  -> cancelled / expired / no-show (incl. 30-min payment timeout)
+      if (s === 'cancelled' || s === 'expired' || s === 'no_show') {
+        return `<span class="badge badge-red">Cancelled</span>`;
+      }
+      if (s === 'active') return `<span class="badge badge-amber">Active</span>`;
+      if (s === 'completed') return `<span class="badge badge-muted">Completed</span>`;
+      if (s === 'confirmed' || (s === 'pending' && ps === 'paid')) {
+        return `<span class="badge badge-green">Confirmed</span>`;
+      }
+      // status === 'pending' and not yet paid
+      return `<span class="badge badge-amber">Pending</span>`;
+    }
+
+    async function loadOwnerBookingsTable(silent = false) {
+      const tbody = document.getElementById('owner-bookings-tbody');
+      if (!tbody && !silent) return;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">Loading bookings…</td></tr>`;
+
+      try {
+        const lotsRes = await api.get('/parking/owner/my-parking');
+        const lots = lotsRes.data || [];
+
+        if (!lots.length) {
+          ownerApiBookings = [];
+          if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No bookings yet — add a parking lot first.</td></tr>`;
+          return;
+        }
+
+        const results = await Promise.all(lots.map(lot =>
+          api.get(`/bookings/parking/${lot.id}?limit=50`)
+            .then(res => (res.data || []).map(b => ({ ...b, lotName: lot.name })))
+            .catch(() => [])
+        ));
+
+        ownerApiBookings = results.flat();
+        ownerApiBookings.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+        if (!tbody) return;
+
+        if (!ownerApiBookings.length) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);font-size:.875rem">No bookings yet — users will book your lots once you add them.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = ownerApiBookings.map(b => {
+          const status = (b.status || '').trim().toLowerCase();
+          const paymentStatus = (b.paymentStatus || '').trim().toLowerCase();
+          const start = new Date(b.startTime);
+          const userName = [b.user?.firstName, b.user?.lastName].filter(Boolean).join(' ') || '—';
+
+          let actions = `<button class="btn btn-outline btn-sm" onclick="ownerViewBooking(${b.id})">View</button>`;
+          if (status === 'pending' || status === 'confirmed') {
+            if (paymentStatus === 'paid') {
+              actions += ` <button class="btn btn-primary btn-sm" onclick="ownerCheckIn(${b.id})">Check-in</button>`;
+            }
+          } else if (status === 'active') {
+            actions += ` <button class="btn btn-outline btn-sm" onclick="ownerCheckOut(${b.id})">Check-out</button>`;
+          }
+
+          return `
+        <tr>
+          <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--amber)">${b.bookingCode}</td>
+          <td>${userName}</td>
+          <td>${b.lotName || '—'}</td>
+          <td>${start.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}</td>
+          <td>${b.slot ? `${b.slot.number}${b.slot.floor ? ' · Fl ' + b.slot.floor : ''}` : '—'}</td>
+          <td>₹${(b.totalAmount || 0).toFixed(2)}</td>
+          <td>${ownerBookingStatusBadge(b.status, b.paymentStatus)}</td>
+          <td style="white-space:nowrap">${actions}</td>
+        </tr>`;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to load owner bookings:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--danger);font-size:.875rem">Could not load bookings.</td></tr>`;
+      }
+    }
+
+    function ownerViewBooking(bookingId) {
+      const b = ownerApiBookings.find(x => x.id === bookingId);
+      if (!b) return;
+      const body = document.getElementById('booking-details-body');
+      const userName = [b.user?.firstName, b.user?.lastName].filter(Boolean).join(' ') || '—';
+      const fmt = (d) => d ? new Date(d).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) + ' IST' : '—';
+      const status = (b.status || '').toLowerCase();
+
+      // Fall back to booked times when actual check-in/out timestamps weren't recorded
+      let checkedIn = b.actualCheckIn;
+      let checkedOut = b.actualCheckOut;
+      if (!checkedIn && (status === 'active' || status === 'completed')) checkedIn = b.startTime;
+      if (!checkedOut && status === 'completed') checkedOut = b.endTime;
+      body.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1.5rem">
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Booking Code</div><div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--amber)">${b.bookingCode}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Status</div><div>${ownerBookingStatusBadge(b.status, b.paymentStatus)}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Customer</div><div>${userName}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Phone</div><div>${b.user?.phone || '—'}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Email</div><div>${b.user?.email || '—'}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Lot</div><div>${b.lotName || '—'}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Slot</div><div>${b.slot ? `${b.slot.number}${b.slot.floor ? ' · Fl ' + b.slot.floor : ''}` : '—'}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Vehicle</div><div>${b.vehicleNumber || '—'} (${b.vehicleType || '—'})</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Booked Start</div><div>${fmt(b.startTime)}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Booked End</div><div>${fmt(b.endTime)}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Checked In</div><div>${fmt(checkedIn)}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Checked Out</div><div>${fmt(checkedOut)}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Payment Status</div><div>${(b.paymentStatus || '—')}</div></div>
+          <div><div style="color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em">Amount</div><div style="font-family:'Syne',sans-serif;font-weight:700">₹${(b.totalAmount || 0).toFixed(2)}</div></div>
+        </div>`;
+      openModal('booking-details-modal');
+    }
+
+    async function ownerCheckIn(bookingId) {
+      try {
+        await api.patch(`/bookings/${bookingId}/check-in`);
+        toast('Booking checked in — now active', 'success');
+        loadOwnerBookingsTable();
+      } catch (err) {
+        console.error('Check-in failed:', err);
+        toast(err?.message || 'Check-in failed', 'error');
+      }
+    }
+
+    async function ownerCheckOut(bookingId) {
+      try {
+        await api.patch(`/bookings/${bookingId}/check-out`);
+        toast('Booking checked out — now completed', 'success');
+        loadOwnerBookingsTable();
+      } catch (err) {
+        console.error('Check-out failed:', err);
+        toast(err?.message || 'Check-out failed', 'error');
+      }
+    }
+
 
     function refreshLotSelect() {
       const lots = _loadOwnerLots();
@@ -1396,11 +1743,70 @@
       if (el) el.textContent = totalSlots;
       const sub = document.getElementById('owner-free-slots');
       if (sub) sub.textContent = lots.length ? lots.reduce((s, l) => s + (parseInt(l.availableSlots) || 0), 0) + ' slots available' : 'add lots to see availability';
+
+      const bookings = ownerApiBookings || [];
+
+      // Owner's revenue = base_amount (their listed price), not total_amount
+      const netEarned = bookings
+        .filter(b => (b.paymentStatus || '').toLowerCase() === 'paid')
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
+      const revEl = document.getElementById('owner-revenue');
+      if (revEl) revEl.textContent = '₹' + netEarned.toFixed(2);
+
+      // Active bookings = currently checked-in
+      const activeCount = bookings.filter(b => (b.status || '').toLowerCase() === 'active').length;
+      const activeEl = document.getElementById('owner-active-bk');
+      if (activeEl) activeEl.textContent = activeCount;
+
       buildCharts();
     }
 
+    /* Fetch owner bookings once and cache, used by overview/revenue tabs */
+    let _ownerBookingsLoaded = false;
+    async function ensureOwnerBookingsLoaded(force = false) {
+      if (!force && _ownerBookingsLoaded && ownerApiBookings.length) return;
+      await loadOwnerBookingsTable(true);
+      _ownerBookingsLoaded = true;
+    }
+
+    function renderRevenueTab() {
+      const bookings = ownerApiBookings || [];
+      const now = new Date();
+
+      const paidBookings = bookings.filter(b => (b.paymentStatus || '').toLowerCase() === 'paid');
+
+      // Owner earns: base_amount (their listed parking price x hours)
+      // Platform earns: tax_amount (10% tax = admin cut)
+
+      const thisMonthOwner = paidBookings
+        .filter(b => {
+          const d = new Date(b.startTime);
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        })
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
+
+      const allTimeOwner = paidBookings
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
+
+      const allTimePlatform = paidBookings
+        .reduce((s, b) => s + (b.taxAmount != null ? b.taxAmount : (b.totalAmount ? b.totalAmount - b.totalAmount / 1.1 : 0)), 0);
+
+      const totalCollected = paidBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
+
+      const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = '₹' + val.toFixed(2); };
+      set('rev-this-month', thisMonthOwner);
+      set('rev-pending-payout', thisMonthOwner);
+      set('rev-all-time', allTimeOwner);
+      set('rev-split-owner', allTimeOwner);
+      set('rev-split-platform', allTimePlatform);
+      set('rev-split-total', totalCollected);
+
+      buildCharts();
+      renderPayoutHistory();
+    }
+
     function renderPayoutHistory() {
-      const bookings = _loadOwnerBookings();
+      const bookings = (ownerApiBookings || []).filter(b => (b.paymentStatus || '').toLowerCase() === 'paid');
       const list = document.getElementById('payout-history-list');
       const emptyState = document.getElementById('payout-empty-state');
       if (!list) return;
@@ -1413,14 +1819,15 @@
 
       if (emptyState) emptyState.style.display = 'none';
 
-      // Group bookings by month
+      // Group by month, track owner vs platform shares separately
       const monthMap = {};
       bookings.forEach(b => {
-        const d = new Date(b.date);
+        const d = new Date(b.startTime);
         const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         const label = d.toLocaleString('default', { month: 'long' }) + ' ' + d.getFullYear();
-        if (!monthMap[key]) monthMap[key] = { label, total: 0 };
-        monthMap[key].total += (b.amount || 0);
+        if (!monthMap[key]) monthMap[key] = { label, ownerTotal: 0, platformTotal: 0 };
+        monthMap[key].ownerTotal += (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0));
+        monthMap[key].platformTotal += (b.taxAmount != null ? b.taxAmount : (b.totalAmount ? b.totalAmount - b.totalAmount / 1.1 : 0));
       });
 
       const sortedKeys = Object.keys(monthMap).sort().reverse();
@@ -1428,31 +1835,107 @@
       const thisMonthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 
       list.innerHTML = sortedKeys.map(key => {
-        const { label, total } = monthMap[key];
-        const net = (total * 0.85).toFixed(2);
+        const { label, ownerTotal, platformTotal } = monthMap[key];
         const isPending = key >= thisMonthKey;
         return `<div class="payout-row">
-      <div>
+      <div style="flex:1">
         <div style="font-weight:500;font-size:.9rem">${label} Payout</div>
-        <div style="font-size:.75rem;color:var(--muted)">Platform fee (15%) deducted</div>
+        <div style="font-size:.72rem;color:var(--muted)">Platform collected ₹${platformTotal.toFixed(2)} in charges</div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:'Syne',sans-serif;font-weight:700;${isPending ? 'color:var(--amber)' : ''}">₹${net}</div>
-        <div style="font-size:.72rem;color:${isPending ? 'var(--muted)' : 'var(--success)'}">${isPending ? 'Pending' : 'Paid'}</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;${isPending ? 'color:var(--amber)' : ''}">₹${ownerTotal.toFixed(2)}</div>
+        <div style="font-size:.72rem;color:${isPending ? 'var(--muted)' : 'var(--success)'};">${isPending ? 'Pending' : 'Paid'}</div>
       </div>
     </div>`;
       }).join('');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    // ── Bank Account Modal ──
+    async function openBankModal() {
+      try {
+        const res = await api.get('/users/owner/bank-account');
+        if (res.success && res.data) {
+          document.getElementById('bank-holder-name').value = res.data.accountHolderName || '';
+          document.getElementById('bank-name-input').value = res.data.bankName || '';
+          document.getElementById('bank-account-input').value = res.data.bankAccount || '';
+          document.getElementById('bank-ifsc-input').value = res.data.bankIfsc || '';
+        }
+      } catch { /* leave blank */ }
+      document.getElementById('bank-modal-error').style.display = 'none';
+      openModal('bank-account-modal');
+    }
+
+    async function saveBankAccount() {
+      const accountHolderName = document.getElementById('bank-holder-name').value.trim();
+      const bankName = document.getElementById('bank-name-input').value.trim();
+      const bankAccount = document.getElementById('bank-account-input').value.trim();
+      const bankIfsc = document.getElementById('bank-ifsc-input').value.trim().toUpperCase();
+      const errEl = document.getElementById('bank-modal-error');
+      const btn = document.getElementById('bank-save-btn');
+
+      if (!accountHolderName || !bankName || !bankAccount || !bankIfsc) {
+        errEl.textContent = 'All fields are required.';
+        errEl.style.display = '';
+        return;
+      }
+
+      setLoading(btn, true);
+      errEl.style.display = 'none';
+      try {
+        await api.put('/users/owner/bank-account', { accountHolderName, bankName, bankAccount, bankIfsc });
+        closeModal('bank-account-modal');
+        toast('Bank account updated successfully', 'success');
+      } catch (err) {
+        errEl.textContent = (err && err.message) || 'Failed to save. Please try again.';
+        errEl.style.display = '';
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
       // Auth guard — only owners/admins allowed
       if (typeof auth !== 'undefined') {
         if (!auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
         if (!auth.isOwner()) { window.location.href = 'dashboard.html'; return; }
       }
-      buildCharts();
+
+      // ── Sync lots from API into localStorage so the dashboard always reflects the DB ──
+      try {
+        const lotsRes = await api.get('/parking/owner/my-parking');
+        const apiLots = lotsRes.data || [];
+        if (apiLots.length > 0) {
+          // Merge API data with any existing localStorage lots, preferring API as source of truth
+          const existing = _loadOwnerLots();
+          const merged = apiLots.map(ap => {
+            const local = existing.find(l => String(l.id) === String(ap.id)) || {};
+            return {
+              id: ap.id,
+              name: ap.name,
+              address: ap.address,
+              city: ap.city,
+              totalSlots: ap.totalSlots,
+              availableSlots: ap.availableSlots,
+              pricing: local.pricing || { car: ap.pricePerHour, bike: ap.pricePerHour, heavy: ap.pricePerHour },
+              floors: local.floors || ['Ground Floor'],
+              amenities: local.amenities || [],
+              status: ap.isApproved ? 'active' : 'pending',
+              isApproved: ap.isApproved,
+              pricePerHour: ap.pricePerHour,
+              latitude: ap.latitude || local.latitude,
+              longitude: ap.longitude || local.longitude,
+              addedAt: local.addedAt || ap.createdAt
+            };
+          });
+          _saveOwnerLots(merged);
+        }
+      } catch (e) {
+        console.warn('Could not sync lots from API:', e);
+      }
+
       refreshLotSelect();
       refreshLotsUI();
+      await ensureOwnerBookingsLoaded(true);
       updateOwnerStats();
       renderPayoutHistory();
       const user = auth.getUser();

@@ -15,6 +15,11 @@ router.get('/profile', authenticate, userController.getProfile);
 router.put('/profile', authenticate, userController.updateProfile);
 router.put('/change-password', authenticate, userController.changePassword);
 
+// Owner bank account & revenue
+router.get('/owner/bank-account', authenticate, userController.ownerGetBankAccount);
+router.put('/owner/bank-account', authenticate, userController.ownerUpdateBankAccount);
+router.get('/owner/revenue', authenticate, userController.ownerGetRevenue);
+
 // Admin user management
 router.get('/admin/all', authenticate, isAdmin, userController.adminGetAllUsers);
 router.get('/admin/owners', authenticate, isAdmin, userController.adminGetAllOwners);
@@ -28,6 +33,9 @@ router.get('/admin/revenue-chart', authenticate, isAdmin, userController.adminRe
 // Admin bookings management
 router.get('/admin/bookings', authenticate, isAdmin, userController.adminGetAllBookings);
 router.patch('/admin/bookings/:id/cancel', authenticate, isAdmin, userController.adminCancelBooking);
+router.patch('/admin/bookings/:id/confirm', authenticate, isAdmin, userController.adminConfirmBooking);
+router.patch('/admin/bookings/:id/checkin', authenticate, isAdmin, userController.adminCheckInBooking);
+router.patch('/admin/bookings/:id/checkout', authenticate, isAdmin, userController.adminCheckOutBooking);
 
 // Admin promo codes
 router.get('/admin/promos', authenticate, isAdmin, userController.adminGetPromos);

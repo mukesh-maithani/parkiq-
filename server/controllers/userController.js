@@ -164,6 +164,138 @@ exports.changePassword = async (req, res, next) => {
 
 
 
+// ── Owner: Update bank account details ──
+exports.ownerUpdateBankAccount = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { accountHolderName, bankName, bankAccount, bankIfsc } = req.body;
+
+        if (!accountHolderName || !bankName || !bankAccount || !bankIfsc) {
+            return res.status(400).json({ success: false, message: 'All bank details are required' });
+        }
+        if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankIfsc.toUpperCase())) {
+            return res.status(400).json({ success: false, message: 'Invalid IFSC code format' });
+        }
+
+        // Check which columns exist and add missing ones individually (compatible with older MySQL)
+        const columns = await query(`
+            SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'parking_owners'
+        `);
+        const existingCols = columns.map(c => c.COLUMN_NAME);
+
+        if (!existingCols.includes('bank_ifsc')) {
+            await query('ALTER TABLE parking_owners ADD COLUMN bank_ifsc VARCHAR(20) DEFAULT NULL');
+        }
+        if (!existingCols.includes('account_holder_name')) {
+            await query('ALTER TABLE parking_owners ADD COLUMN account_holder_name VARCHAR(100) DEFAULT NULL');
+        }
+
+        // Ensure owner record exists
+        const owners = await query('SELECT id FROM parking_owners WHERE user_id = ?', [userId]);
+        if (owners.length === 0) {
+            await query(
+                'INSERT INTO parking_owners (user_id, bank_account, bank_name, bank_ifsc, account_holder_name) VALUES (?, ?, ?, ?, ?)',
+                [userId, bankAccount, bankName, bankIfsc.toUpperCase(), accountHolderName]
+            );
+        }
+
+        await query(
+            `UPDATE parking_owners
+             SET bank_name = ?, bank_account = ?, bank_ifsc = ?, account_holder_name = ?, updated_at = NOW()
+             WHERE user_id = ?`,
+            [bankName, bankAccount, bankIfsc.toUpperCase(), accountHolderName, userId]
+        );
+
+        res.json({ success: true, message: 'Bank account updated successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── Owner: Get current bank account details ──
+exports.ownerGetBankAccount = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const rows = await query(
+            'SELECT bank_name, bank_account, bank_ifsc, account_holder_name FROM parking_owners WHERE user_id = ?',
+            [userId]
+        );
+        const row = rows[0] || {};
+        res.json({
+            success: true,
+            data: {
+                bankName: row.bank_name || '',
+                bankAccount: row.bank_account || '',
+                bankIfsc: row.bank_ifsc || '',
+                accountHolderName: row.account_holder_name || ''
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ── Owner: Get revenue split (owner share vs admin/platform share) ──
+exports.ownerGetRevenue = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+
+        // Get all parking IDs for this owner
+        const lots = await query('SELECT id FROM parking_locations WHERE owner_id = ?', [userId]);
+        if (lots.length === 0) {
+            return res.json({ success: true, data: { ownerEarnings: 0, platformEarnings: 0, totalCollected: 0, bookings: [] } });
+        }
+        const lotIds = lots.map(l => l.id);
+        const placeholders = lotIds.map(() => '?').join(',');
+
+        // Paid bookings: base_amount goes to owner, tax_amount goes to platform (admin)
+        const bookings = await query(`
+            SELECT b.id, b.booking_code, b.base_amount, b.tax_amount, b.total_amount,
+                   b.start_time, b.end_time, b.status, b.payment_status, b.created_at,
+                   p.name AS parking_name,
+                   u.first_name, u.last_name
+            FROM bookings b
+            JOIN parking_locations p ON b.parking_id = p.id
+            JOIN users u ON b.user_id = u.id
+            WHERE b.parking_id IN (${placeholders})
+              AND b.payment_status = 'paid'
+            ORDER BY b.created_at DESC
+        `, lotIds);
+
+        const ownerEarnings = bookings.reduce((s, b) => s + parseFloat(b.base_amount || 0), 0);
+        const platformEarnings = bookings.reduce((s, b) => s + parseFloat(b.tax_amount || 0), 0);
+        const totalCollected = bookings.reduce((s, b) => s + parseFloat(b.total_amount || 0), 0);
+
+        res.json({
+            success: true,
+            data: {
+                ownerEarnings: Math.round(ownerEarnings * 100) / 100,
+                platformEarnings: Math.round(platformEarnings * 100) / 100,
+                totalCollected: Math.round(totalCollected * 100) / 100,
+                bookings: bookings.map(b => ({
+                    id: b.id,
+                    bookingCode: b.booking_code,
+                    parkingName: b.parking_name,
+                    customerName: [b.first_name, b.last_name].filter(Boolean).join(' '),
+                    startTime: b.start_time,
+                    baseAmount: parseFloat(b.base_amount),
+                    taxAmount: parseFloat(b.tax_amount),
+                    totalAmount: parseFloat(b.total_amount),
+                    ownerAmount: parseFloat(b.base_amount),
+                    platformAmount: parseFloat(b.tax_amount),
+                    status: b.status,
+                    paymentStatus: b.payment_status,
+                    createdAt: b.created_at
+                }))
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // ── Admin: Get all users ──
 exports.adminGetAllUsers = async (req, res, next) => {
     try {
@@ -235,12 +367,28 @@ exports.adminGetStats = async (req, res, next) => {
 // ── Admin: Get all bookings ──
 exports.adminGetAllBookings = async (req, res, next) => {
     try {
-        const { search, status, limit = 100, offset = 0 } = req.query;
+        const db = require('../config/db');
+
+        // Auto-cancel pending bookings older than 30 minutes with no payment
+        await db.query(`
+            UPDATE bookings
+            SET status = 'cancelled',
+                cancelled_at = NOW(),
+                cancellation_reason = 'Auto-cancelled: payment not completed within 30 minutes',
+                updated_at = NOW()
+            WHERE status = 'pending'
+              AND payment_status = 'pending'
+              AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+        `);
+
+        const { search, status, limit = 200, offset = 0 } = req.query;
         let sql = `
             SELECT b.id, b.booking_code, b.status, b.payment_status,
                    b.start_time, b.end_time, b.duration_hours,
                    b.base_amount, b.tax_amount, b.total_amount,
                    b.vehicle_number, b.vehicle_type, b.created_at,
+                   b.actual_check_in, b.actual_check_out,
+                   b.cancelled_at, b.cancellation_reason,
                    u.first_name, u.last_name, u.email,
                    p.name AS parking_name, p.city
             FROM bookings b
@@ -251,9 +399,9 @@ exports.adminGetAllBookings = async (req, res, next) => {
         if (status) { sql += ' AND b.status = ?'; params.push(status); }
         if (search) { sql += ' AND (b.booking_code LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR p.name LIKE ?)'; const s = `%${search}%`; params.push(s, s, s, s); }
         sql += ` ORDER BY b.created_at DESC
-         LIMIT ${Number(limit) || 100}
+         LIMIT ${Number(limit) || 200}
          OFFSET ${Number(offset) || 0}`;
-        const rows = await require('../config/db').query(sql, params);
+        const rows = await db.query(sql, params);
         res.json({
             success: true, data: rows.map(b => ({
                 id: b.id, bookingCode: b.booking_code, status: b.status,
@@ -265,6 +413,10 @@ exports.adminGetAllBookings = async (req, res, next) => {
                 totalAmount: parseFloat(b.total_amount),
                 vehicleNumber: b.vehicle_number, vehicleType: b.vehicle_type,
                 createdAt: b.created_at,
+                actualCheckIn: b.actual_check_in,
+                actualCheckOut: b.actual_check_out,
+                cancelledAt: b.cancelled_at,
+                cancellationReason: b.cancellation_reason,
                 user: { firstName: b.first_name, lastName: b.last_name, email: b.email },
                 parking: { name: b.parking_name, city: b.city }
             }))
@@ -276,10 +428,69 @@ exports.adminGetAllBookings = async (req, res, next) => {
 exports.adminCancelBooking = async (req, res, next) => {
     try {
         const { id } = req.params;
-        await require('../config/db').query(
-            `UPDATE bookings SET status = 'cancelled' WHERE id = ?`, [id]
+        const db = require('../config/db');
+        const rows = await db.query('SELECT status FROM bookings WHERE id = ?', [id]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Booking not found' });
+        if (!['pending','confirmed','active'].includes(rows[0].status)) {
+            return res.status(400).json({ success: false, message: `Cannot cancel booking with status: ${rows[0].status}` });
+        }
+        await db.query(
+            `UPDATE bookings SET status = 'cancelled', cancelled_at = NOW(),
+             cancellation_reason = 'Cancelled by admin', updated_at = NOW() WHERE id = ?`, [id]
         );
         res.json({ success: true, message: 'Booking cancelled' });
+    } catch (error) { next(error); }
+};
+
+// ── Admin: Force-confirm a booking (mark payment as paid) ──
+exports.adminConfirmBooking = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const db = require('../config/db');
+        const rows = await db.query('SELECT status FROM bookings WHERE id = ?', [id]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Booking not found' });
+        if (rows[0].status !== 'pending') return res.status(400).json({ success: false, message: `Cannot confirm booking with status: ${rows[0].status}` });
+        await db.query(
+            `UPDATE bookings SET status = 'confirmed', payment_status = 'paid', updated_at = NOW() WHERE id = ?`, [id]
+        );
+        res.json({ success: true, message: 'Booking confirmed' });
+    } catch (error) { next(error); }
+};
+
+// ── Admin: Force check-in ──
+exports.adminCheckInBooking = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const db = require('../config/db');
+        const rows = await db.query('SELECT status, slot_id FROM bookings WHERE id = ?', [id]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Booking not found' });
+        if (rows[0].status !== 'confirmed') return res.status(400).json({ success: false, message: `Cannot check-in booking with status: ${rows[0].status}` });
+        await db.query(
+            `UPDATE bookings SET status = 'active', actual_check_in = NOW(), updated_at = NOW() WHERE id = ?`, [id]
+        );
+        if (rows[0].slot_id) {
+            await db.query(`UPDATE parking_slots SET status = 'occupied' WHERE id = ?`, [rows[0].slot_id]);
+        }
+        res.json({ success: true, message: 'Checked in successfully' });
+    } catch (error) { next(error); }
+};
+
+// ── Admin: Force check-out ──
+exports.adminCheckOutBooking = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const db = require('../config/db');
+        const rows = await db.query('SELECT status, slot_id, parking_id FROM bookings WHERE id = ?', [id]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Booking not found' });
+        if (rows[0].status !== 'active') return res.status(400).json({ success: false, message: `Cannot check-out booking with status: ${rows[0].status}` });
+        await db.query(
+            `UPDATE bookings SET status = 'completed', actual_check_out = NOW(), updated_at = NOW() WHERE id = ?`, [id]
+        );
+        if (rows[0].slot_id) {
+            await db.query(`UPDATE parking_slots SET status = 'available' WHERE id = ?`, [rows[0].slot_id]);
+            await db.query(`UPDATE parking_locations SET available_slots = available_slots + 1 WHERE id = ?`, [rows[0].parking_id]);
+        }
+        res.json({ success: true, message: 'Checked out successfully' });
     } catch (error) { next(error); }
 };
 

@@ -115,6 +115,18 @@ exports.verifyPayment = async (req, res, next) => {
             ['confirmed', 'paid', payment.booking_id]
         );
 
+        // Step 4b: Credit owner's total_earnings with base_amount (their listed price)
+        const bookingRow = await query('SELECT base_amount, parking_id FROM bookings WHERE id = ?', [payment.booking_id]);
+        if (bookingRow.length > 0) {
+            const { base_amount, parking_id } = bookingRow[0];
+            await query(`
+                UPDATE parking_owners po
+                JOIN parking_locations pl ON pl.owner_id = po.user_id
+                SET po.total_earnings = po.total_earnings + ?
+                WHERE pl.id = ?
+            `, [parseFloat(base_amount), parking_id]);
+        }
+
         // Step 5: Create notification
         await query(`
             INSERT INTO notifications (user_id, type, title, message, data)
@@ -316,5 +328,95 @@ exports.getRevenueAnalytics = async (req, res, next) => {
         });
     } catch (error) {
         next(error);
+    }
+};
+
+// Razorpay 3DS callback — receives POST redirect from bank after card auth
+// No auth middleware here (Razorpay posts directly, no user token)
+exports.razorpayCallback = async (req, res) => {
+    const callbackBase = '/pages/payment-callback.html';
+    try {
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+        const bookingId = req.query.bookingId;
+
+        // Payment failed at bank — Razorpay sends error fields instead of signature
+        if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+            const reason = req.body.error
+                ? (req.body.error.description || req.body.error.reason || 'Payment declined by bank')
+                : 'Payment was not completed';
+            return res.redirect(
+                `${callbackBase}?status=failed&message=${encodeURIComponent(reason)}`
+            );
+        }
+
+        // Verify signature
+        const expectedSignature = crypto
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+            .digest('hex');
+
+        if (expectedSignature !== razorpay_signature) {
+            return res.redirect(
+                `${callbackBase}?status=failed&message=${encodeURIComponent('Signature verification failed')}`
+            );
+        }
+
+        // Get payment record
+        const payments = await query(
+            'SELECT p.*, b.booking_code FROM payments p JOIN bookings b ON p.booking_id = b.id WHERE p.razorpay_order_id = ?',
+            [razorpay_order_id]
+        );
+
+        if (payments.length === 0) {
+            return res.redirect(
+                `${callbackBase}?status=failed&message=${encodeURIComponent('Payment record not found')}`
+            );
+        }
+
+        const payment = payments[0];
+
+        // Update payment status
+        await query(
+            'UPDATE payments SET status = ?, razorpay_payment_id = ?, razorpay_signature = ?, paid_at = NOW() WHERE id = ?',
+            ['completed', razorpay_payment_id, razorpay_signature, payment.id]
+        );
+
+        // Update booking status
+        await query(
+            'UPDATE bookings SET status = ?, payment_status = ? WHERE id = ?',
+            ['confirmed', 'paid', payment.booking_id]
+        );
+
+        // Credit owner's total_earnings with base_amount
+        const bookingRow2 = await query('SELECT base_amount, parking_id FROM bookings WHERE id = ?', [payment.booking_id]);
+        if (bookingRow2.length > 0) {
+            const { base_amount, parking_id } = bookingRow2[0];
+            await query(`
+                UPDATE parking_owners po
+                JOIN parking_locations pl ON pl.owner_id = po.user_id
+                SET po.total_earnings = po.total_earnings + ?
+                WHERE pl.id = ?
+            `, [parseFloat(base_amount), parking_id]);
+        }
+
+        // Create notification
+        await query(`
+            INSERT INTO notifications (user_id, type, title, message, data)
+            VALUES (?, 'payment', 'Payment Successful', ?, ?)
+        `, [
+            payment.user_id,
+            `Your payment of ₹${payment.amount} for booking ${payment.booking_code} was successful.`,
+            JSON.stringify({ bookingId: payment.booking_id, razorpay_payment_id })
+        ]);
+
+        return res.redirect(
+            `${callbackBase}?status=success&bookingCode=${encodeURIComponent(payment.booking_code)}&amount=${encodeURIComponent(payment.amount)}&bookingId=${payment.booking_id}`
+        );
+
+    } catch (error) {
+        console.error('Razorpay callback error:', error);
+        return res.redirect(
+            `${callbackBase}?status=failed&message=${encodeURIComponent('Server error during verification')}`
+        );
     }
 };

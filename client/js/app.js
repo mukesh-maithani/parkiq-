@@ -263,6 +263,23 @@ function availabilityText(available, total) {
 }
 
 /* ─────────────────────────────────────────
+   SIDEBAR TOGGLE (mobile dashboard layouts)
+───────────────────────────────────────── */
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (!sidebar) return;
+  sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('show');
+}
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+/* ─────────────────────────────────────────
    INIT
 ───────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {

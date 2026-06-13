@@ -127,12 +127,14 @@
           <input type="text" class="form-input" id="vehicle-number" placeholder="e.g. ABC-1234" style="text-transform:uppercase">
           <span class="form-error hidden" data-error="vehicleNumber"></span>
         </div>
-        <div class="vehicle-types">
+        <div class="vehicle-types" style="grid-template-columns:repeat(3,1fr)">
+          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="motorcycle" id="v-bike"><label for="v-bike" class="vehicle-label"><span class="vehicle-icon">🏍️</span>Bike</label></div>
           <div class="vehicle-opt"><input type="radio" name="vehicleType" value="car" id="v-car" checked><label for="v-car" class="vehicle-label"><span class="vehicle-icon">🚗</span>Car</label></div>
-          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="ev" id="v-ev"><label for="v-ev" class="vehicle-label"><span class="vehicle-icon">⚡</span>EV</label></div>
-          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="motorcycle" id="v-moto"><label for="v-moto" class="vehicle-label"><span class="vehicle-icon">🏍️</span>Moto</label></div>
-          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="truck" id="v-truck"><label for="v-truck" class="vehicle-label"><span class="vehicle-icon">🚛</span>Truck</label></div>
-          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="heavy" id="v-heavy"><label for="v-heavy" class="vehicle-label"><span class="vehicle-icon">🚌</span>Heavy</label></div>
+          <div class="vehicle-opt"><input type="radio" name="vehicleType" value="truck" id="v-heavy"><label for="v-heavy" class="vehicle-label"><span class="vehicle-icon">🚌</span>Heavy</label></div>
+        </div>
+        <div class="form-group" style="margin-top:1rem;display:flex;align-items:center;gap:.6rem">
+          <input type="checkbox" id="v-is-ev" style="width:auto;accent-color:var(--amber)">
+          <label for="v-is-ev" class="form-label" style="margin:0;cursor:pointer">This is an Electric Vehicle (EV)</label>
         </div>
       </div>
 
@@ -223,12 +225,9 @@
     <div class="booking-map-panel">
       <div class="booking-map-header">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Nearby Parking Spots
+        Parking Location
       </div>
       <div id="booking-leaflet-map"></div>
-      <div class="nearby-list" id="nearby-list">
-        <div style="padding:1rem;text-align:center;color:var(--muted);font-size:.8rem">Loading nearby spots…</div>
-      </div>
     </div>
 
     <!-- Summary Card -->
@@ -266,8 +265,6 @@ const parkingId = params.get('id') || '1';
 let pricePerHour = 650;
 let discount = 0;
 let bookingMap = null;
-let selectedMarker = null;
-let nearbyMarkers = [];
 
 // Parking data from URL params
 let parkingName    = params.get('name')    || '';
@@ -280,21 +277,6 @@ if (parkingName)    document.getElementById('sum-name').textContent    = parking
 if (parkingAddress) document.getElementById('sum-address').textContent = parkingAddress;
 pricePerHour = parkingPrice || 150;
 
-/* ── Mock nearby spots (fallback when API not connected) ── */
-function getMockNearby(lat, lng) {
-  const spots = [
-    { id:1, name:'MG Road Basement Parking', address:'MG Road, Agra', lat: lat+0.003, lng: lng+0.004, price:80, available:12, total:50 },
-    { id:2, name:'Civil Lines Multi-Level',  address:'Civil Lines, Agra', lat: lat-0.005, lng: lng+0.002, price:60, available:3,  total:30 },
-    { id:3, name:'Sadar Bazar Open Lot',     address:'Sadar Bazar, Agra', lat: lat+0.001, lng: lng-0.006, price:40, available:25, total:60 },
-    { id:4, name:'Taj Ganj Parking Complex', address:'Taj Ganj, Agra',    lat: lat-0.002, lng: lng-0.003, price:120, available:0, total:40 },
-    { id:5, name:'Fatehabad Rd Parking',     address:'Fatehabad Rd, Agra',lat: lat+0.007, lng: lng+0.001, price:70, available:8, total:35 },
-  ];
-  if (parkingName && parkingLat && parkingLng) {
-    spots.unshift({ id: parseInt(parkingId)||0, name: parkingName, address: parkingAddress,
-      lat: parkingLat, lng: parkingLng, price: parkingPrice, available: 10, total: 30 });
-  }
-  return spots;
-}
 
 /* ── Init Leaflet Map ── */
 function initBookingMap() {
@@ -302,113 +284,60 @@ function initBookingMap() {
   const centerLng = parkingLng || 78.0081;
 
   bookingMap = L.map('booking-leaflet-map', { zoomControl: true, scrollWheelZoom: false })
-    .setView([centerLat, centerLng], 14);
+    .setView([centerLat, centerLng], 16);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19
   }).addTo(bookingMap);
 
-  const amberIcon = L.divIcon({
-    className: '',
-    html: `<div style="background:#f59e0b;color:#0a0a0a;border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.35);border:2px solid #fff">₹</div>`,
-    iconAnchor: [20, 20]
-  });
   const selectedIcon = L.divIcon({
     className: '',
     html: `<div style="background:#f59e0b;color:#0a0a0a;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 3px 12px rgba(245,158,11,.5);border:2px solid #fff;transform:scale(1.15)">📍</div>`,
     iconAnchor: [24, 24]
   });
 
-  const apiUrl = `/api/parking/nearby?latitude=${centerLat}&longitude=${centerLng}&radius=5&limit=20`;
-  fetch(apiUrl).then(r => r.json()).then(res => {
-    loadNearbySpots(res.data || getMockNearby(centerLat, centerLng), amberIcon, selectedIcon);
-  }).catch(() => {
-    loadNearbySpots(getMockNearby(centerLat, centerLng), amberIcon, selectedIcon);
-  });
-}
-
-function loadNearbySpots(spots, amberIcon, selectedIcon) {
-  nearbyMarkers = [];
-  spots.forEach(spot => {
-    const isSelected = (spot.id === parseInt(parkingId));
-    const icon = isSelected ? selectedIcon : amberIcon;
-    const marker = L.marker([spot.lat, spot.lng], { icon })
-      .addTo(bookingMap)
-      .bindPopup(`<b>${spot.name}</b><br>${spot.address}<br><span style="color:#f59e0b;font-weight:700">₹${spot.price}/hr</span> · ${spot.available} slots free`);
-    marker.on('click', () => selectNearbySpot(spot, marker, selectedIcon, amberIcon));
-    nearbyMarkers.push({ spot, marker, amberIcon, selectedIcon });
-  });
-  renderNearbyList(spots, amberIcon, selectedIcon);
   if (parkingLat && parkingLng) {
-    bookingMap.setView([parkingLat, parkingLng], 15);
-  } else if (spots.length) {
-    const group = L.featureGroup(nearbyMarkers.map(m => m.marker));
-    bookingMap.fitBounds(group.getBounds().pad(0.15));
+    L.marker([parkingLat, parkingLng], { icon: selectedIcon })
+      .addTo(bookingMap)
+      .bindPopup(`<b>${parkingName || 'Selected parking'}</b>${parkingAddress ? '<br>' + parkingAddress : ''}`)
+      .openPopup();
   }
-}
-
-function renderNearbyList(spots, amberIcon, selectedIcon) {
-  const container = document.getElementById('nearby-list');
-  if (!container) return;
-  if (!spots.length) {
-    container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted);font-size:.8rem">No nearby spots found</div>';
-    return;
-  }
-  container.innerHTML = spots.map(spot => {
-    const isSelected = (spot.id === parseInt(parkingId));
-    const avail = spot.available > 0
-      ? `<span style="color:#10b981;font-size:.7rem">● ${spot.available} free</span>`
-      : `<span style="color:#ef4444;font-size:.7rem">● Full</span>`;
-    return `
-      <div class="nearby-item${isSelected ? ' selected' : ''}" data-spot-id="${spot.id}"
-           onclick="selectNearbySpotById(${spot.id})">
-        <div>
-          <div class="nearby-item-name">${spot.name}</div>
-          <div class="nearby-item-dist">${spot.address} &nbsp;${avail}</div>
-        </div>
-        <div class="nearby-item-price">₹${spot.price}/hr</div>
-      </div>`;
-  }).join('');
-}
-
-function selectNearbySpotById(id) {
-  const entry = nearbyMarkers.find(m => m.spot.id === id);
-  if (!entry) return;
-  selectNearbySpot(entry.spot, entry.marker, entry.selectedIcon, entry.amberIcon);
-}
-
-function selectNearbySpot(spot, marker, selectedIcon, amberIcon) {
-  nearbyMarkers.forEach(m => m.marker.setIcon(m.amberIcon));
-  marker.setIcon(selectedIcon);
-  bookingMap.flyTo([spot.lat, spot.lng], 16, { animate: true, duration: 0.8 });
-  marker.openPopup();
-  parkingName    = spot.name;
-  parkingAddress = spot.address;
-  pricePerHour   = spot.price;
-  document.getElementById('sum-name').textContent    = spot.name;
-  document.getElementById('sum-address').textContent = spot.address;
-  document.querySelectorAll('.nearby-item').forEach(el => {
-    el.classList.toggle('selected', parseInt(el.dataset.spotId) === spot.id);
-  });
-  calcSummary();
-  toast('Selected: ' + spot.name, 'success');
 }
 
 function setDefaultDates(){
   const now = new Date();
   const end = new Date(now.getTime()+2*3600000);
-  const fmt = d => d.toISOString().slice(0,16);
-  document.getElementById('start-time').value = fmt(now);
-  document.getElementById('end-time').value   = fmt(end);
+  // Format as local time for datetime-local inputs (avoid UTC shift from toISOString)
+  const fmt = d => {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const startInput = document.getElementById('start-time');
+  const endInput = document.getElementById('end-time');
+  startInput.value = fmt(now);
+  endInput.value   = fmt(end);
+  startInput.min = fmt(now);
+  endInput.min = fmt(now);
   calcSummary();
+}
+
+function getVehicleType() {
+  const base = document.querySelector('input[name="vehicleType"]:checked')?.value || 'car';
+  const isEv = document.getElementById('v-is-ev')?.checked;
+  return isEv ? 'ev' : base;
+}
+function getVehicleLabel() {
+  const base = document.querySelector('input[name="vehicleType"]:checked')?.value || 'car';
+  const labels = { motorcycle: 'Bike', car: 'Car', truck: 'Heavy' };
+  const isEv = document.getElementById('v-is-ev')?.checked;
+  return (isEv ? 'EV ' : '') + (labels[base] || base);
 }
 
 function calcSummary(){
   const s = new Date(document.getElementById('start-time')?.value);
   const e = new Date(document.getElementById('end-time')?.value);
   const vn = document.getElementById('vehicle-number')?.value || '—';
-  const vt = document.querySelector('input[name="vehicleType"]:checked')?.value || 'car';
   if(!s||!e||isNaN(s)||isNaN(e)||e<=s) return;
   const hrs   = (e-s)/3600000;
   const base  = Math.round(hrs*pricePerHour*100)/100;
@@ -417,7 +346,7 @@ function calcSummary(){
   document.getElementById('sum-start').textContent   = s.toLocaleString('en-IN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   document.getElementById('sum-end').textContent     = e.toLocaleString('en-IN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
   document.getElementById('sum-dur').textContent     = hrs.toFixed(1)+' hrs';
-  document.getElementById('sum-vehicle').textContent = vt.charAt(0).toUpperCase()+vt.slice(1)+' · '+(vn||'—');
+  document.getElementById('sum-vehicle').textContent = getVehicleLabel()+' · '+(vn||'—');
   document.getElementById('sum-base').textContent    = '₹'+Math.round(base);
   document.getElementById('sum-tax').textContent     = '₹'+Math.round(tax);
   document.getElementById('sum-total').textContent   = '₹'+Math.round(total);
@@ -429,6 +358,7 @@ function calcSummary(){
 
 ['start-time','end-time'].forEach(id => document.getElementById(id)?.addEventListener('change',calcSummary));
 document.querySelectorAll('input[name="vehicleType"]').forEach(r=>r.addEventListener('change',calcSummary));
+document.getElementById('v-is-ev')?.addEventListener('change', calcSummary);
 document.querySelectorAll('input[name="payMethod"]').forEach(r=>{
   r.addEventListener('change',()=>{
     document.getElementById('card-fields').style.display = r.value==='card'?'flex':'none';
@@ -474,7 +404,7 @@ async function confirmBooking(btn) {
     const startTime   = document.getElementById('start-time').value;
     const endTime     = document.getElementById('end-time').value;
     const vehicleNum  = document.getElementById('vehicle-number').value.trim();
-    const vehicleType = document.querySelector('input[name="vehicleType"]:checked')?.value || 'car';
+    const vehicleType = getVehicleType();
     const payMethod   = document.querySelector('input[name="payMethod"]:checked')?.value || 'card';
     const totalText   = document.getElementById('sum-total').textContent.replace('₹','').replace(',','');
     const totalAmount = parseFloat(totalText) || 0;
@@ -538,8 +468,14 @@ async function confirmBooking(btn) {
       },
       theme: { color: '#f59e0b' },
 
+      // callback_url: Razorpay POSTs here after 3DS bank redirect.
+      // Must be a backend route (not static HTML) because Razorpay sends a POST.
+      // Backend verifies the signature and redirects to payment-callback.html with result params.
+      callback_url: `${window.location.origin}/api/payments/callback?bookingId=${bookingId}`,
+      redirect: true,  // allow redirect for 3DS; handler() covers non-3DS cards/UPI
+
       handler: async function (response) {
-        // Step 4: Payment verify karo
+        // Step 4: Payment verify karo (modal flow — non-3DS cards, UPI, etc.)
         try {
           const verifyRes = await fetch('/api/payments/verify', {
             method: 'POST',
@@ -582,6 +518,24 @@ async function confirmBooking(btn) {
       toast('Payment fail: ' + (response.error.description || 'Unknown error'), 'error');
       setLoading(btn, false);
     });
+
+    // Listen for result from payment-callback.html tab (3DS redirect flow)
+    function onCallbackMessage(event) {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== 'RAZORPAY_PAYMENT_RESULT') return;
+      window.removeEventListener('message', onCallbackMessage);
+      setLoading(btn, false);
+      if (event.data.success) {
+        // Extract booking code from message if present
+        const match = event.data.message && event.data.message.match(/Code:\s*(\S+)/);
+        if (match) document.getElementById('booking-code-display').textContent = match[1];
+        goToStep(3);
+        toast('Booking confirmed! Payment successful 🎉', 'success');
+      } else {
+        toast('Payment failed: ' + (event.data.message || 'Please try again.'), 'error');
+      }
+    }
+    window.addEventListener('message', onCallbackMessage);
 
     rzp.open();
 

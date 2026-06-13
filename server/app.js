@@ -16,6 +16,7 @@ const parkingRoutes = require('./routes/parkingRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const reviewRoutes  = require('./routes/reviewRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const paymentController = require('./controllers/paymentController');
  
 const errorHandler = require('./middleware/errorHandler');
  
@@ -83,6 +84,12 @@ app.get('/api/test', async (req, res) => {
         res.json({ dbOk: true, tables: r2, parking: r3 });
     } catch(e) { res.status(500).json({ dbOk: false, error: e.message, code: e.code, sql: e.sql }); }
 });
+
+// Some banks' 3DS ACS pages POST the final redirect back to the
+// page that hosted the payment iframe instead of the configured
+// callback_url. Handle a stray POST to the static callback page
+// the same way as the real callback route so it doesn't 404.
+app.post('/pages/payment-callback.html', paymentController.razorpayCallback);
 
 app.use('/api/auth',     authRoutes);
 app.use('/api/users',    userRoutes);
