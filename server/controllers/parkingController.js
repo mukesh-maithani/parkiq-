@@ -740,4 +740,3 @@ exports.adminDeleteLot = async (req, res, next) => {
         res.json({ success: true, message: 'Parking lot deleted' });
     } catch (error) { next(error); }
 };
-e
