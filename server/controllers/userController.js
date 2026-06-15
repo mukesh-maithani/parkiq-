@@ -250,7 +250,7 @@ exports.ownerGetRevenue = async (req, res, next) => {
         const lotIds = lots.map(l => l.id);
         const placeholders = lotIds.map(() => '?').join(',');
 
-        // Paid bookings: owner gets 85% of total_amount, admin/platform gets 15%
+        // Paid bookings: base_amount goes to owner, tax_amount goes to platform (admin)
         const bookings = await query(`
             SELECT b.id, b.booking_code, b.base_amount, b.tax_amount, b.total_amount,
                    b.start_time, b.end_time, b.status, b.payment_status, b.created_at,
@@ -264,15 +264,15 @@ exports.ownerGetRevenue = async (req, res, next) => {
             ORDER BY b.created_at DESC
         `, lotIds);
 
+        const ownerEarnings = bookings.reduce((s, b) => s + parseFloat(b.base_amount || 0), 0);
+        const platformEarnings = bookings.reduce((s, b) => s + parseFloat(b.tax_amount || 0), 0);
         const totalCollected = bookings.reduce((s, b) => s + parseFloat(b.total_amount || 0), 0);
-        const ownerEarnings = Math.round(totalCollected * 0.85 * 100) / 100;
-        const platformEarnings = Math.round(totalCollected * 0.15 * 100) / 100;
 
         res.json({
             success: true,
             data: {
-                ownerEarnings,
-                platformEarnings,
+                ownerEarnings: Math.round(ownerEarnings * 100) / 100,
+                platformEarnings: Math.round(platformEarnings * 100) / 100,
                 totalCollected: Math.round(totalCollected * 100) / 100,
                 bookings: bookings.map(b => ({
                     id: b.id,
@@ -283,8 +283,8 @@ exports.ownerGetRevenue = async (req, res, next) => {
                     baseAmount: parseFloat(b.base_amount),
                     taxAmount: parseFloat(b.tax_amount),
                     totalAmount: parseFloat(b.total_amount),
-                    ownerAmount: Math.round(parseFloat(b.total_amount || 0) * 0.85 * 100) / 100,
-                    platformAmount: Math.round(parseFloat(b.total_amount || 0) * 0.15 * 100) / 100,
+                    ownerAmount: parseFloat(b.base_amount),
+                    platformAmount: parseFloat(b.tax_amount),
                     status: b.status,
                     paymentStatus: b.payment_status,
                     createdAt: b.created_at
@@ -352,16 +352,11 @@ exports.adminGetStats = async (req, res, next) => {
             `)
         ]);
         const row = totals[0];
-        const totalRevenue = parseFloat(row.total_revenue) || 0;
-        const adminEarnings = Math.round(totalRevenue * 0.15 * 100) / 100;
-        const ownerPayouts = Math.round(totalRevenue * 0.85 * 100) / 100;
         res.json({
             success: true, data: {
                 totalUsers: row.total_users,
                 totalBookings: row.total_bookings,
-                totalRevenue,
-                adminEarnings,
-                ownerPayouts,
+                totalRevenue: parseFloat(row.total_revenue) || 0,
                 pendingApprovals: row.pending_approvals,
                 approvedLots: row.approved_lots
             }

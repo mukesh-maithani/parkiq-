@@ -1746,10 +1746,10 @@
 
       const bookings = ownerApiBookings || [];
 
-      // Owner's revenue = 85% of total_amount; admin keeps 15%
+      // Owner's revenue = base_amount (their listed price), not total_amount
       const netEarned = bookings
         .filter(b => (b.paymentStatus || '').toLowerCase() === 'paid')
-        .reduce((s, b) => s + (b.ownerAmount != null ? b.ownerAmount : (b.totalAmount ? b.totalAmount * 0.85 : 0)), 0);
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
       const revEl = document.getElementById('owner-revenue');
       if (revEl) revEl.textContent = '₹' + netEarned.toFixed(2);
 
@@ -1775,21 +1775,21 @@
 
       const paidBookings = bookings.filter(b => (b.paymentStatus || '').toLowerCase() === 'paid');
 
-      // Owner earns: 85% of total_amount
-      // Admin/Platform earns: 15% of total_amount
+      // Owner earns: base_amount (their listed parking price x hours)
+      // Platform earns: tax_amount (10% tax = admin cut)
 
       const thisMonthOwner = paidBookings
         .filter(b => {
           const d = new Date(b.startTime);
           return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
         })
-        .reduce((s, b) => s + (b.ownerAmount != null ? b.ownerAmount : (b.totalAmount ? b.totalAmount * 0.85 : 0)), 0);
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
 
       const allTimeOwner = paidBookings
-        .reduce((s, b) => s + (b.ownerAmount != null ? b.ownerAmount : (b.totalAmount ? b.totalAmount * 0.85 : 0)), 0);
+        .reduce((s, b) => s + (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0)), 0);
 
       const allTimePlatform = paidBookings
-        .reduce((s, b) => s + (b.platformAmount != null ? b.platformAmount : (b.totalAmount ? b.totalAmount * 0.15 : 0)), 0);
+        .reduce((s, b) => s + (b.taxAmount != null ? b.taxAmount : (b.totalAmount ? b.totalAmount - b.totalAmount / 1.1 : 0)), 0);
 
       const totalCollected = paidBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
 
@@ -1826,8 +1826,8 @@
         const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         const label = d.toLocaleString('default', { month: 'long' }) + ' ' + d.getFullYear();
         if (!monthMap[key]) monthMap[key] = { label, ownerTotal: 0, platformTotal: 0 };
-        monthMap[key].ownerTotal += (b.ownerAmount != null ? b.ownerAmount : (b.totalAmount ? b.totalAmount * 0.85 : 0));
-        monthMap[key].platformTotal += (b.platformAmount != null ? b.platformAmount : (b.totalAmount ? b.totalAmount * 0.15 : 0));
+        monthMap[key].ownerTotal += (b.baseAmount != null ? b.baseAmount : (b.totalAmount ? b.totalAmount / 1.1 : 0));
+        monthMap[key].platformTotal += (b.taxAmount != null ? b.taxAmount : (b.totalAmount ? b.totalAmount - b.totalAmount / 1.1 : 0));
       });
 
       const sortedKeys = Object.keys(monthMap).sort().reverse();
